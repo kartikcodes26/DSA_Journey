@@ -4,6 +4,7 @@
 using namespace std;
 
 /*
+
 Use two pointer apprach when :
 
 1.	Array / Linked list
@@ -11,12 +12,12 @@ Use two pointer apprach when :
 3.	Merge / remove duplicate / rearrange
 4.	Detect Cycle
 5.	Pair / triplet / Quadruplet
-6.	No Extra Space 
+6.	No Extra Space
 
 */
 
 /*
-Question : 
+Question :
 
 Given an array of integers and a target value, find two numbers whose sum equals the target. Return the pair of numbers.
 
@@ -29,7 +30,7 @@ vector<int> twosum(vector<int> v, const int &target)
 
     int i = 0;
     int j = v.size() - 1;
-    
+
 
     while(i < j)
     {
