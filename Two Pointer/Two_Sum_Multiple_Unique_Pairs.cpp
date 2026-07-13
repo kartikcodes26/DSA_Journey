@@ -24,23 +24,35 @@ Given an array of integers and a target value, find two numbers whose sum equals
 Pattern: Two Pointers (after sorting)
 */
 
-vector<int> twosum(vector<int> v, const int &target)
+vector<vector<int>> twosum(vector<int> v, const int &target)
 {
+    if(v.empty())
+    {
+        return {};
+    }
+    
     sort(v.begin(), v.end());
 
+    vector<vector<int>> sum;
     int i = 0;
     int j = v.size() - 1;
 
 
     while(i < j)
     {
+
+
         if(v[i] + v[j] == target)
         {
-            return {v[i], v[j]};
-        }
-        else if(i == j)
-        {
-            return {};
+            sum.push_back({v[i], v[j]});
+
+            // Tab tak khudao jab tak unique elemnt humara pointer na aa jaye
+            // i < j because outer loop is not checked during this inner while loop
+            while(i < j && v[i] == v[i+1]) i++;
+            while(i < j && v[j] == v[j-1]) j--;
+
+            i++;
+            j--;
         }
         else if (v[i] + v[j] < target)
         {
@@ -51,10 +63,19 @@ vector<int> twosum(vector<int> v, const int &target)
             j--;
         }
     }
+    return sum;
 }
+
 int main()
 {
-    vector<int> v1 = {2,8,9,0,7};
-    vector<int> result = twosum(v1, 10);
-    cout << result[0] << " , " << result[1] << '\n';
+    vector<int> v1 = {};
+    vector<vector<int>> result = twosum(v1, 0);
+    for(auto &pair : result)
+    {
+        for(int x : pair)
+        {
+            cout << x << " ";
+        }
+        cout << '\n';
+    }
 }
