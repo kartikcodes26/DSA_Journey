@@ -1,0 +1,288 @@
+=========================================================
+                    STL CHEAT SHEET (C++)
+=========================================================
+
+-------------------- VECTOR --------------------
+
+vector<int> v;
+
+v.push_back(x);
+v.pop_back();
+
+v.front();
+v.back();
+
+v.begin();
+v.end();
+
+v.size();
+v.empty();
+
+v.at(i);
+v[i];
+
+v.clear();
+
+v.insert(it, x);
+v.erase(it);
+v.erase(first, last);
+
+v.capacity();
+v.reserve(n);
+v.shrink_to_fit();
+
+sort(v.begin(), v.end());
+reverse(v.begin(), v.end());
+
+------------------------------------------------
+
+
+-------------------- STRING --------------------
+
+string s;
+
+s.push_back(ch);
+s.pop_back();
+
+s.front();
+s.back();
+
+s.size();
+s.length();
+
+s.empty();
+
+s.clear();
+
+s.substr(pos, len);
+s.find("abc");
+s.erase(pos, len);
+s.insert(pos, "abc");
+s.replace(pos, len, "xyz");
+
+sort(s.begin(), s.end());
+reverse(s.begin(), s.end());
+
+------------------------------------------------
+
+
+-------------------- STACK --------------------
+
+stack<int> st;
+
+st.push(x);
+st.pop();
+
+st.top();
+
+st.size();
+st.empty();
+
+------------------------------------------------
+
+
+-------------------- QUEUE --------------------
+
+queue<int> q;
+
+q.push(x);
+q.pop();
+
+q.front();
+q.back();
+
+q.size();
+q.empty();
+
+------------------------------------------------
+
+
+---------------- PRIORITY QUEUE ----------------
+
+// Max Heap
+priority_queue<int> pq;
+
+// Min Heap
+priority_queue<int, vector<int>, greater<int>> pq;
+
+pq.push(x);
+pq.pop();
+
+pq.top();
+
+pq.size();
+pq.empty();
+
+------------------------------------------------
+
+
+-------------------- DEQUE --------------------
+
+deque<int> dq;
+
+dq.push_back(x);
+dq.push_front(x);
+
+dq.pop_back();
+dq.pop_front();
+
+dq.front();
+dq.back();
+
+dq.size();
+dq.empty();
+
+------------------------------------------------
+
+
+-------------------- LIST --------------------
+
+list<int> l;
+
+l.push_back(x);
+l.push_front(x);
+
+l.pop_back();
+l.pop_front();
+
+l.front();
+l.back();
+
+l.begin();
+l.end();
+
+l.insert(it, x);
+l.erase(it);
+
+l.remove(x);
+
+l.sort();
+l.reverse();
+
+l.merge(l2);
+
+------------------------------------------------
+
+
+---------------------- SET ----------------------
+
+set<int> st;
+
+st.insert(x);
+st.erase(x);
+
+st.find(x);
+st.count(x);
+
+st.lower_bound(x);
+st.upper_bound(x);
+
+st.begin();
+st.end();
+
+st.size();
+st.empty();
+
+------------------------------------------------
+
+
+----------------- UNORDERED SET ----------------
+
+unordered_set<int> us;
+
+us.insert(x);
+us.erase(x);
+
+us.find(x);
+us.count(x);
+
+us.size();
+us.empty();
+
+------------------------------------------------
+
+
+----------------------- MAP ---------------------
+
+map<int,int> mp;
+
+mp[key] = value;
+
+mp.insert({key, value});
+
+mp.at(key);
+
+mp.find(key);
+mp.count(key);
+
+mp.erase(key);
+
+mp.begin();
+mp.end();
+
+mp.size();
+mp.empty();
+
+------------------------------------------------
+
+
+--------------- UNORDERED MAP ------------------
+
+unordered_map<int,int> mp;
+
+mp[key] = value;
+
+mp.insert({key, value});
+
+mp.at(key);
+
+mp.find(key);
+mp.count(key);
+
+mp.erase(key);
+
+mp.size();
+mp.empty();
+
+------------------------------------------------
+
+
+-------------------- ITERATORS -----------------
+
+auto it = v.begin();
+auto it = v.end();
+
+next(it, n);
+prev(it, n);
+
+distance(first, last);
+
+------------------------------------------------
+
+
+-------------------- ALGORITHM -----------------
+
+sort(begin, end);
+
+reverse(begin, end);
+
+min(a, b);
+max(a, b);
+
+min_element(begin, end);
+max_element(begin, end);
+
+binary_search(begin, end, x);
+
+lower_bound(begin, end, x);
+upper_bound(begin, end, x);
+
+find(begin, end, x);
+
+count(begin, end, x);
+
+accumulate(begin, end, 0);
+
+swap(a, b);
+
+------------------------------------------------
