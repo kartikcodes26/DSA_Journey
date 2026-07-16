@@ -1,0 +1,21 @@
+When to apply Sliding Window
+
+1) Array / String
+2) No linkedlist
+3) Subarray / Substring
+4) No Subsequence (Non Continuous)
+5) Max, Min, Longest, Shortest, Sum, Count, Average
+6) Atmost K, Atleast K, Exactly K
+
+Types
+
+1) Fixed
+2) Dynamic
+
+Steps to solve question
+
+1) Identify Pattern
+2) Fixed / Variable
+3) Find Data in the window
+4) Find Data in new window
+5) Repeat till it reaches the end or produces desired output
