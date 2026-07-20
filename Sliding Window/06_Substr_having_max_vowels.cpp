@@ -32,6 +32,7 @@ public:
 
         long long int res = 0;
         long long int count = countvowels(low, high, s);
+        
         while (high < s.size()) {
             res = max(res, count);
 

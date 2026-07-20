@@ -2,6 +2,7 @@
 // Time Complexity: O(n)
 // Space Complexity: O(1)
 // Sliding Window Approach fixed
+// Problem statement: Given an array consisting of n integers, find the contiguous subarray of given length k that has the maximum average value. And you need to output the maximum average value.
 
 
 

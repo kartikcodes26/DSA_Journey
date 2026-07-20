@@ -1,3 +1,6 @@
+// Leetcode problem no 340. Longest Substring with K Distinct Characters
+// problem statement: Given a string s and an integer k, return the length of the longest substring of s that contains at most k distinct characters.
+
 class Solution {
   public:
     int longestKSubstr(string &s, int k) {
