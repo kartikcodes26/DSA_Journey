@@ -1,3 +1,8 @@
+// Leetcode problem no 1493. Longest Subarray of 1's After Deleting One Element
+// problem statement: Given a binary array nums, you should delete one element from it.
+// Return the size of the longest non-empty subarray that contains only 1's in the resulting array.
+// If there is no such subarray, return 0.
+
 class Solution {
 	public:
 	int maxSubarraySum(vector<int>& v, int k) {
@@ -39,6 +44,6 @@ class Solution {
 	}
 };
 
-//Time complexity : O(n)
+// Time complexity : O(n)
 // Space Complexity : O(1)
-//Submitted
+// Submitted

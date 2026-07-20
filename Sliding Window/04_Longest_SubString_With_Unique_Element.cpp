@@ -17,6 +17,10 @@ public:
         {
             mp[s[high]]++;
 
+            // Window ki size se mp ka size chota hai iska matlab duplicate characters present hai
+            // agar equal hai to present nahi hai
+            // Aur bada toh ho hii nahi sakta
+            
             while(mp.size() < high - low + 1) // While duplicate characters are present
             {
                 mp[s[low]]--;
