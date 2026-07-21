@@ -1,3 +1,8 @@
+// Leetcode problem no 141. Linked List Cycle
+// Given head, the head of a linked list, determine if the linked list has a cycle in it.
+// Time complexity: O(n)
+// Space complexity: O(1)
+
 /**
  * Definition for singly-linked list.
  * struct ListNode {
@@ -7,7 +12,7 @@
  * };
  */
 
- // 
+
 class Solution {
 public:
     bool hasCycle(ListNode *head) {
