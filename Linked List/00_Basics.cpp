@@ -12,7 +12,6 @@ int main()
     node* first = new node();
     first->data = 10;
 
-
     node* second = new node();
     second->data = 20;
 

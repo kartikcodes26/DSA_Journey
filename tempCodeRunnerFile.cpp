@@ -1,42 +1,33 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
 using namespace std;
 
-int findMinArrowShots(vector<vector<int>>& points) {
-    sort(points.begin(), points.end());
-    vector<int> start;
-    vector<int> end;
-
-    for(int a = 0; a < points.size(); a++)
-    {
-        start.push_back(points[a][0]);
-    }
-    for(int a = 0; a < points.size(); a++)
-    {
-        end.push_back(points[a][1]);
-    }
-    int t = 0;
-    int res = 0;
+int maxA(vector<int> heights)
+{
     int i = 0;
-    int j = 0;
-    while(i < start.size() && j < end.size())
+    int j = heights.size() - 1;
+    int res = 0;
+    int area = 0;
+    while(i <= j)
     {
-        if(start[i] < end[j])
+        if(heights[i] <= heights[j])
         {
+            area = heights[i] * (j - i);
             i++;
         }
         else
         {
-            j = i;
-            res++;
+            area = heights[j] * (j - i);
+            j--;
         }
+        res = max(area, res);
     }
-    res++;
+
     return res;
 }
+
 int main()
 {
-    vector<vector<int>> v = {{1, 2}, {2, 3}, {3, 4}}; //Expected output: 2
-    cout << findMinArrowShots(v);
+    vector<int> v1 {5, 1, 9, 1, 0, 2};
+    cout << maxA(v1);
 }
