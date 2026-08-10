@@ -26,6 +26,7 @@ public:
             ispossible = true;
             int mid = low + (high - low) / 2;
             k = mid; // Make the search space itself be the possible speeds
+            
             while(i < piles.size())
             {
                 if(piles[i] % k != 0)
