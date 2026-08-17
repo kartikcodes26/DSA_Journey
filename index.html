@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DSA Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-solarizedlight.min.css">
+<style>
+  :root{
+    --bg: #F6F7FB;
+    --surface: #FFFFFF;
+    --border: #E7E9F4;
+    --text: #262B3A;
+    --dim: #8A90A6;
+    --accent: #6C5CE7;
+    --accent-soft: #EFECFF;
+    --folder: #FFB258;
+    --folder-soft: #FFF3E4;
+    --file: #4FB0C6;
+    --file-soft: #E8F7FA;
+    --shadow: 0 1px 2px rgba(31,36,58,0.04), 0 6px 16px rgba(31,36,58,0.06);
+    --heading-font: "Outfit", sans-serif;
+    --body-font: "Inter", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--body-font);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  /* Header */
+  header{
+    padding:18px 18px 14px; flex-shrink:0; background:var(--bg);
+    display:flex; align-items:center; gap:12px;
+  }
+  #back-btn{
+    width:38px; height:38px; flex-shrink:0; border:none; background:var(--surface);
+    box-shadow:var(--shadow); color:var(--accent); font-size:18px; cursor:pointer;
+    display:none; align-items:center; justify-content:center; border-radius:12px;
+  }
+  #back-btn.show{display:flex;}
+  #back-btn:active{transform:scale(0.94);}
+  .header-text{min-width:0; flex:1;}
+  #crumb{
+    font-size:12px; color:var(--dim); white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; font-weight:500; margin-bottom:2px;
+  }
+  #title{
+    font-family:var(--heading-font); font-size:22px; font-weight:600; color:var(--text);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em;
+  }
+  .repo-link{
+    width:38px; height:38px; flex-shrink:0; border-radius:12px; background:var(--surface);
+    box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center;
+    color:var(--dim); text-decoration:none; font-size:16px;
+  }
+
+  /* Views */
+  #app{flex:1; min-height:0; position:relative;}
+  .view{
+    position:absolute; inset:0; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:4px 16px 24px;
+  }
+
+  /* List view — friendly cards */
+  .card-list{display:flex; flex-direction:column; gap:8px;}
+  .row{
+    display:flex; align-items:center; gap:13px; padding:13px 14px;
+    background:var(--surface); border-radius:16px; box-shadow:var(--shadow);
+    cursor:pointer;
+  }
+  .row:active{transform:scale(0.985); background:#FCFCFF;}
+  .badge{
+    width:40px; height:40px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+  }
+  .badge.folder{background:var(--folder-soft); color:var(--folder);}
+  .badge.file{background:var(--file-soft); color:var(--file);}
+  .row-info{flex:1; min-width:0;}
+  .row-name{
+    font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; color:var(--text);
+  }
+  .row-sub{font-size:12px; color:var(--dim); margin-top:1px;}
+  .row-chev{color:var(--dim); font-size:15px; flex-shrink:0;}
+
+  .status{padding:24px 4px; color:var(--dim); font-size:14px; text-align:center;}
+  .status.error{color:#E4572E;}
+  .empty{padding:48px 20px; text-align:center; color:var(--dim); font-size:14px;}
+  .empty-emoji{font-size:32px; margin-bottom:8px; display:block;}
+
+  /* Code view */
+  #code-view{display:none; flex-direction:column; padding:0;}
+  .filebar{
+    padding:10px 16px; display:flex; justify-content:space-between; align-items:center;
+    gap:12px; flex-shrink:0; margin:4px 16px 8px;
+    background:var(--surface); border-radius:14px; box-shadow:var(--shadow);
+  }
+  .filebar-name{font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .filebar a{
+    color:var(--accent); text-decoration:none; font-size:12px; font-weight:600;
+    background:var(--accent-soft); padding:5px 10px; border-radius:8px; flex-shrink:0;
+  }
+  #codewrap{flex:1; overflow:auto; margin:0 16px 16px; border-radius:16px; box-shadow:var(--shadow);}
+  pre[class*="language-"]{margin:0; min-height:100%; border-radius:16px; font-size:13px; padding:16px;}
+  code{font-family:var(--mono) !important;}
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:#D6D9E8; border-radius:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <button id="back-btn" aria-label="Back">←</button>
+  <div class="header-text">
+    <div id="crumb">kartikcodes26</div>
+    <div id="title">DSA Journey</div>
+  </div>
+  <a class="repo-link" id="repo-link" href="#" target="_blank" rel="noopener" title="Open on GitHub">↗</a>
+</header>
+
+<div id="app">
+  <div class="view" id="list-view"></div>
+  <div class="view" id="code-view">
+    <div class="filebar">
+      <span class="filebar-name" id="current-path"></span>
+      <a id="raw-link" href="#" target="_blank" rel="noopener">View raw</a>
+    </div>
+    <div id="codewrap"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+
+// ---- Config ----
+const OWNER = "kartikcodes26";
+const REPO  = "DSA_Journey";
+const BRANCH_FALLBACK = "main";
+// ----------------
+
+const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+document.getElementById('repo-link').href = `https://github.com/${OWNER}/${REPO}`;
+
+const listView = document.getElementById('list-view');
+const codeView = document.getElementById('code-view');
+const backBtn = document.getElementById('back-btn');
+const crumbEl = document.getElementById('crumb');
+const titleEl = document.getElementById('title');
+const currentPathEl = document.getElementById('current-path');
+const rawLinkEl = document.getElementById('raw-link');
+const codewrap = document.getElementById('codewrap');
+
+const LANG_MAP = {
+  js:'javascript', ts:'typescript', py:'python', java:'java', cpp:'cpp', cc:'cpp',
+  c:'c', h:'c', hpp:'cpp', cs:'csharp', go:'go', rs:'rust', rb:'ruby', php:'php',
+  html:'markup', htm:'markup', xml:'markup', css:'css', json:'json', md:'markdown',
+  sh:'bash', yml:'yaml', yaml:'yaml', sql:'sql', kt:'kotlin', swift:'swift',
+  txt:'none', gitignore:'none'
+};
+
+function fileEmoji(name){
+  const ext = name.split('.').pop().toLowerCase();
+  if(ext === 'md') return '📝';
+  if(['py'].includes(ext)) return '🐍';
+  if(['java'].includes(ext)) return '☕';
+  if(['cpp','cc','c','h','hpp'].includes(ext)) return '⚙️';
+  if(['js','ts'].includes(ext)) return '📜';
+  if(['json','yml','yaml'].includes(ext)) return '🔧';
+  if(['txt'].includes(ext)) return '🗒️';
+  if(name === '.gitignore') return '🚫';
+  return '📄';
+}
+
+// navigation stack: array of path strings, '' = root
+let stack = [''];
+
+async function ghFetch(path){
+  const res = await fetch(`${API}/contents/${path}`);
+  if(!res.ok){
+    if(res.status === 403) throw new Error('Too many requests right now — give it a minute and try again.');
+    if(res.status === 404) throw new Error("Couldn't find that.");
+    throw new Error(`Something went wrong (${res.status}).`);
+  }
+  return res.json();
+}
+
+function showList(){
+  codeView.style.display = 'none';
+  listView.style.display = 'block';
+}
+function showCode(){
+  listView.style.display = 'none';
+  codeView.style.display = 'flex';
+}
+
+function updateHeader(path){
+  backBtn.classList.toggle('show', stack.length > 1);
+  crumbEl.textContent = path === '' ? OWNER : path.split('/').join(' / ');
+  titleEl.textContent = path === '' ? REPO : path.split('/').pop();
+}
+
+async function renderFolder(path){
+  showList();
+  updateHeader(path);
+  listView.innerHTML = `<div class="status">Loading…</div>`;
+  try{
+    const items = await ghFetch(path);
+    if(!Array.isArray(items)){
+      listView.innerHTML = `<div class="status error">That doesn't look like a folder.</div>`;
+      return;
+    }
+    if(items.length === 0){
+      listView.innerHTML = `<div class="empty"><span class="empty-emoji">📭</span>This folder is empty.</div>`;
+      return;
+    }
+    const sorted = [...items].sort((a,b) => {
+      if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    const list = document.createElement('div');
+    list.className = 'card-list';
+    for(const item of sorted){
+      const row = document.createElement('div');
+      row.className = 'row';
+      if(item.type === 'dir'){
+        row.innerHTML = `
+          <div class="badge folder">📁</div>
+          <div class="row-info">
+            <div class="row-name">${item.name}</div>
+            <div class="row-sub">Folder</div>
+          </div>
+          <div class="row-chev">›</div>`;
+        row.addEventListener('click', () => {
+          stack.push(item.path);
+          renderFolder(item.path);
+        });
+      } else {
+        row.innerHTML = `
+          <div class="badge file">${fileEmoji(item.name)}</div>
+          <div class="row-info">
+            <div class="row-name">${item.name}</div>
+            <div class="row-sub">${(item.size/1024).toFixed(1)} KB</div>
+          </div>
+          <div class="row-chev">›</div>`;
+        row.addEventListener('click', () => openFile(item));
+      }
+      list.appendChild(row);
+    }
+    listView.innerHTML = '';
+    listView.appendChild(list);
+  }catch(err){
+    listView.innerHTML = `<div class="status error">${err.message}</div>`;
+  }
+}
+
+async function openFile(item){
+  showCode();
+  backBtn.classList.add('show');
+  crumbEl.textContent = item.path.split('/').slice(0,-1).join(' / ') || OWNER;
+  titleEl.textContent = item.name;
+  currentPathEl.textContent = item.name;
+  rawLinkEl.href = item.html_url || `https://github.com/${OWNER}/${REPO}/blob/${BRANCH_FALLBACK}/${item.path}`;
+  codewrap.innerHTML = `<div class="status">Loading ${item.name}…</div>`;
+
+  try{
+    const res = await fetch(item.download_url);
+    if(!res.ok) throw new Error(`Couldn't load this file (${res.status}).`);
+    const text = await res.text();
+
+    const ext = item.name.split('.').pop().toLowerCase();
+    const lang = LANG_MAP[ext] || 'none';
+
+    const pre = document.createElement('pre');
+    pre.className = `language-${lang}`;
+    const code = document.createElement('code');
+    code.className = `language-${lang}`;
+    code.textContent = text;
+    pre.appendChild(code);
+
+    codewrap.innerHTML = '';
+    codewrap.appendChild(pre);
+    Prism.highlightElement(code);
+
+    stack.push({ __file: true });
+  }catch(err){
+    codewrap.innerHTML = `<div class="status error">${err.message}</div>`;
+  }
+}
+
+backBtn.addEventListener('click', () => {
+  if(stack.length <= 1) return;
+  stack.pop();
+  const top = stack[stack.length - 1];
+  if(typeof top === 'string'){
+    renderFolder(top);
+  }
+});
+
+renderFolder('');
+</script>
+
+</body>
+</html>
+    padding:10px 8px; background:var(--panel);
+  }
+  #viewer{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .filebar{
+    padding:8px 16px; border-bottom:1px solid var(--line); color:var(--dim);
+    font-size:12px; display:flex; justify-content:space-between; gap:12px;
+  }
+  .filebar a{color:var(--dim); text-decoration:none;}
+  .filebar a:hover{color:var(--accent2);}
+  #codewrap{flex:1; overflow:auto; margin:0;}
+  pre[class*="language-"]{margin:0; height:100%; border-radius:0; background:var(--bg) !important; font-size:13px;}
+  code{font-family:var(--mono) !important;}
+  .placeholder{
+    display:flex; align-items:center; justify-content:center; height:100%;
+    color:var(--dim); flex-direction:column; gap:6px; text-align:center; padding:20px;
+  }
+  .placeholder .cursor{
+    display:inline-block; width:8px; height:16px; background:var(--accent);
+    animation:blink 1s step-end infinite;
+  }
+  @keyframes blink{50%{opacity:0;}}
+  .node{white-space:nowrap; user-select:none;}
+  .node .row{
+    display:flex; align-items:center; gap:6px; padding:3px 6px; border-radius:4px; cursor:pointer;
+  }
+  .node .row:hover{background:#161b22;}
+  .node .row.active{background:#132436; color:var(--accent2);}
+  .node .children{margin-left:16px; border-left:1px dashed var(--line); padding-left:6px;}
+  .icon{width:14px; text-align:center; flex-shrink:0; font-size:12px;}
+  .folder-icon{color:var(--folder);}
+  .file-icon{color:var(--dim);}
+  .name{overflow:hidden; text-overflow:ellipsis;}
+  .caret{width:10px; color:var(--dim); font-size:10px; flex-shrink:0;}
+  .loading, .error{padding:12px; color:var(--dim); font-size:12px;}
+  .error{color:#f85149;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:#21262d; border-radius:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="prompt">~/</span>
+  <h1 id="repo-title">loading repo…</h1>
+  <a class="repo-link" id="repo-link" href="#" target="_blank" rel="noopener">view on github.com →</a>
+</header>
+
+<div class="layout">
+  <div id="tree"><div class="loading">fetching file tree…</div></div>
+  <div id="viewer">
+    <div class="filebar">
+      <span id="current-path">no file selected</span>
+      <a id="raw-link" href="#" target="_blank" rel="noopener" style="display:none;">raw ↗</a>
+    </div>
+    <div id="codewrap">
+      <div class="placeholder">
+        <span class="cursor"></span>
+        <div style="margin-top:10px;">select a file from the tree to view its contents</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>
+Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+
+// ---- Config: change these two to point the explorer at any repo ----
+const OWNER = "kartikcodes26";
+const REPO  = "DSA_Journey";
+const BRANCH_FALLBACK = "main";
+// ----------------------------------------------------------------------
+
+const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+const treeEl = document.getElementById('tree');
+const codewrap = document.getElementById('codewrap');
+const currentPathEl = document.getElementById('current-path');
+const rawLinkEl = document.getElementById('raw-link');
+
+document.getElementById('repo-title').textContent = `${OWNER}/${REPO}`;
+document.getElementById('repo-link').href = `https://github.com/${OWNER}/${REPO}`;
+
+const LANG_MAP = {
+  js:'javascript', ts:'typescript', py:'python', java:'java', cpp:'cpp', cc:'cpp',
+  c:'c', h:'c', hpp:'cpp', cs:'csharp', go:'go', rs:'rust', rb:'ruby', php:'php',
+  html:'markup', htm:'markup', xml:'markup', css:'css', json:'json', md:'markdown',
+  sh:'bash', yml:'yaml', yaml:'yaml', sql:'sql', kt:'kotlin', swift:'swift',
+  txt:'none', gitignore:'none'
+};
+
+async function ghFetch(path=''){
+  const res = await fetch(`${API}/contents/${path}`);
+  if(!res.ok){
+    if(res.status === 403) throw new Error('GitHub API rate limit hit — try again in a bit.');
+    if(res.status === 404) throw new Error('Repo or path not found.');
+    throw new Error(`GitHub API error: ${res.status}`);
+  }
+  return res.json();
+}
+
+async function buildTree(){
+  try{
+    const rootItems = await ghFetch('');
+    treeEl.innerHTML = '';
+    treeEl.appendChild(renderLevel(rootItems, ''));
+  }catch(err){
+    treeEl.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+function renderLevel(items, parentPath){
+  const wrap = document.createElement('div');
+  const sorted = [...items].sort((a,b) => {
+    if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+  for(const item of sorted){
+    const node = document.createElement('div');
+    node.className = 'node';
+
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    if(item.type === 'dir'){
+      row.innerHTML = `<span class="caret">▸</span><span class="icon folder-icon">▤</span><span class="name">${item.name}</span>`;
+      node.appendChild(row);
+      let childrenLoaded = false;
+      let childrenEl = null;
+      row.addEventListener('click', async () => {
+        const caret = row.querySelector('.caret');
+        if(!childrenLoaded){
+          caret.textContent = '…';
+          try{
+            const subItems = await ghFetch(item.path);
+            childrenEl = renderLevel(subItems, item.path);
+            childrenEl.className = 'children';
+            node.appendChild(childrenEl);
+            childrenLoaded = true;
+          }catch(err){
+            caret.textContent = '▸';
+            const e = document.createElement('div');
+            e.className = 'error';
+            e.textContent = err.message;
+            node.appendChild(e);
+            return;
+          }
+        }
+        const isOpen = childrenEl.style.display !== 'none';
+        childrenEl.style.display = isOpen ? 'none' : 'block';
+        caret.textContent = isOpen ? '▸' : '▾';
+      });
+    } else {
+      row.innerHTML = `<span class="caret"></span><span class="icon file-icon">▫</span><span class="name">${item.name}</span>`;
+      row.addEventListener('click', () => {
+        document.querySelectorAll('.row.active').forEach(r => r.classList.remove('active'));
+        row.classList.add('active');
+        openFile(item);
+      });
+      node.appendChild(row);
+    }
+    wrap.appendChild(node);
+  }
+  return wrap;
+}
+
+async function openFile(item){
+  currentPathEl.textContent = item.path;
+  rawLinkEl.style.display = 'inline';
+  rawLinkEl.href = item.html_url || `https://github.com/${OWNER}/${REPO}/blob/${BRANCH_FALLBACK}/${item.path}`;
+  codewrap.innerHTML = `<div class="loading">loading ${item.name}…</div>`;
+
+  try{
+    const res = await fetch(item.download_url);
+    if(!res.ok) throw new Error(`Could not load file (${res.status})`);
+    const text = await res.text();
+
+    const ext = item.name.split('.').pop().toLowerCase();
+    const lang = LANG_MAP[ext] || 'none';
+
+    const pre = document.createElement('pre');
+    pre.className = `language-${lang} line-numbers`;
+    const code = document.createElement('code');
+    code.className = `language-${lang}`;
+    code.textContent = text;
+    pre.appendChild(code);
+
+    codewrap.innerHTML = '';
+    codewrap.appendChild(pre);
+    Prism.highlightElement(code);
+  }catch(err){
+    codewrap.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+buildTree();
+</script>
+
+</body>
+</html>
