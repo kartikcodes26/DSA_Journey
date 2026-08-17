@@ -2,8 +2,8 @@
 // description: Given an integer array nums and an integer k, return the k most frequent elements. You may return the answer in any order.
 // example: Input: nums = [1,1,1,2,2,3], k = 2
 // Output: [1,2]
-// required time complexity: O(nlogk) where n is the number of elements in the array and k is the number of unique elements in the array
-// Actual time complexity: O(nlogk) where n is the number of elements in the array and k is the number of unique elements in the array
+// required time complexity: O(nlogn) where n is the number of elements in the array
+// Actual time complexity: O(nlogn) where n is the number of elements in the array
 // actual space complexity: O(n) where n is the number of elements in the array
 // Pattern : Heap
 // Difficulty : Medium
