@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>DSA Journey</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,18 +18,24 @@
     />
     <style>
       :root {
-        --bg: #0f1117;
-        --surface: #1a1d27;
-        --border: #2a2e3d;
-        --text: #e4e6ef;
-        --dim: #8a90a6;
-        --accent: #8b7cf7;
-        --accent-soft: rgba(108, 92, 231, 0.16);
-        --folder: #ffb258;
-        --folder-soft: rgba(255, 178, 88, 0.12);
-        --file: #4fb0c6;
-        --file-soft: rgba(79, 176, 198, 0.12);
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.45);
+        --bg: #0c0d10;
+        --surface: #15161b;
+        --surface-hover: #1b1d23;
+        --border: #212329;
+        --text: #e7e8ec;
+        --dim: #86878f;
+        --dim-2: #55565e;
+        --accent: #7684f0;
+        --accent-soft: rgba(118, 132, 240, 0.13);
+        --folder: #c9a768;
+        --folder-soft: rgba(201, 167, 104, 0.12);
+        --danger: #e2664f;
+        --danger-soft: rgba(226, 102, 79, 0.12);
+        --ok: #4fb06c;
+        --ok-soft: rgba(79, 176, 108, 0.13);
+        --radius-sm: 8px;
+        --radius: 12px;
+        --ease: cubic-bezier(0.4, 0, 0.2, 1);
         --heading-font: "Outfit", sans-serif;
         --body-font: "Inter", sans-serif;
         --mono: "JetBrains Mono", ui-monospace, monospace;
@@ -50,41 +56,67 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        overscroll-behavior-y: none;
       }
       .icon-svg {
         flex-shrink: 0;
         display: block;
       }
+      button {
+        font-family: inherit;
+        appearance: none;
+      }
+
+      /* Offline banner */
+      #offline-banner {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #f0b464;
+        background: rgba(240, 180, 100, 0.1);
+        padding: 8px 16px;
+        flex-shrink: 0;
+      }
+      #offline-banner.show {
+        display: flex;
+      }
 
       /* Header */
       header {
-        padding: 18px 18px 14px;
+        padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 12px;
         flex-shrink: 0;
         background: var(--bg);
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        border-bottom: 1px solid transparent;
       }
       #back-btn {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
         flex-shrink: 0;
-        border: none;
+        border: 1px solid var(--border);
         background: var(--surface);
-        box-shadow: var(--shadow);
-        color: var(--accent);
-        font-size: 18px;
+        color: var(--text);
         cursor: pointer;
         display: none;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        border-radius: var(--radius-sm);
+        transition:
+          background 0.12s var(--ease),
+          transform 0.1s var(--ease);
       }
       #back-btn.show {
         display: flex;
+        animation: fade-in 0.15s var(--ease);
       }
       #back-btn:active {
-        transform: scale(0.94);
+        transform: scale(0.92);
+        background: var(--surface-hover);
       }
       .header-text {
         min-width: 0;
@@ -101,7 +133,7 @@
       }
       #title {
         font-family: var(--heading-font);
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 600;
         color: var(--text);
         white-space: nowrap;
@@ -110,18 +142,21 @@
         letter-spacing: -0.01em;
       }
       .repo-link {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
         flex-shrink: 0;
-        border-radius: 12px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
         background: var(--surface);
-        box-shadow: var(--shadow);
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--dim);
         text-decoration: none;
-        font-size: 16px;
+        transition: background 0.12s var(--ease);
+      }
+      .repo-link:active {
+        background: var(--surface-hover);
       }
 
       /* Views */
@@ -135,33 +170,70 @@
         inset: 0;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 4px 16px 24px;
+        padding: 4px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+        animation: view-in 0.16s var(--ease);
+      }
+      @keyframes view-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
-      /* List view — friendly cards */
+      /* List view */
       .card-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
       }
       .row {
         display: flex;
         align-items: center;
-        gap: 13px;
-        padding: 13px 14px;
+        gap: 12px;
+        padding: 11px 12px;
         background: var(--surface);
-        border-radius: 16px;
-        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
         cursor: pointer;
+        transition:
+          background 0.12s var(--ease),
+          border-color 0.12s var(--ease),
+          transform 0.08s var(--ease);
+        opacity: 0;
+        animation: row-in 0.22s var(--ease) forwards;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .row {
+          animation: none;
+          opacity: 1;
+        }
+        .view {
+          animation: none;
+        }
+      }
+      @keyframes row-in {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .row:hover {
+        border-color: #2c2f38;
+        background: var(--surface-hover);
       }
       .row:active {
-        transform: scale(0.985);
-        background: #20242f;
+        transform: scale(0.988);
       }
       .badge {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
+        width: 34px;
+        height: 34px;
+        border-radius: var(--radius-sm);
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -171,59 +243,126 @@
         background: var(--folder-soft);
         color: var(--folder);
       }
-      .badge.file {
-        background: var(--file-soft);
-        color: var(--file);
+      .lang-badge {
+        width: 34px;
+        height: 34px;
+        border-radius: var(--radius-sm);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-weight: 600;
+        letter-spacing: -0.02em;
       }
       .row-info {
         flex: 1;
         min-width: 0;
       }
       .row-name {
-        font-weight: 600;
-        font-size: 15px;
+        font-weight: 500;
+        font-size: 14px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         color: var(--text);
       }
       .row-sub {
-        font-size: 12px;
+        font-size: 11.5px;
         color: var(--dim);
-        margin-top: 1px;
-      }
-      .row-sub.date {
-        font-size: 11px;
-        color: var(--dim);
-        opacity: 0.7;
         margin-top: 2px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .row-sub .dot {
+        opacity: 0.5;
       }
       .row-chev {
-        color: var(--dim);
+        color: var(--dim-2);
         flex-shrink: 0;
         display: flex;
+        transition: transform 0.12s var(--ease);
+      }
+      .row:hover .row-chev {
+        transform: translateX(1px);
       }
 
       .status {
-        padding: 24px 4px;
+        padding: 32px 4px;
         color: var(--dim);
-        font-size: 14px;
+        font-size: 13.5px;
         text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
       }
       .status.error {
-        color: #ff6b4a;
+        color: var(--danger);
+      }
+      .status-icon {
+        color: var(--dim-2);
+        opacity: 0.8;
+      }
+      .status.error .status-icon {
+        color: var(--danger);
+        opacity: 0.85;
+      }
+      .retry-btn {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background 0.12s var(--ease);
+      }
+      .retry-btn:active {
+        background: var(--surface-hover);
+        transform: scale(0.96);
       }
       .empty {
-        padding: 48px 20px;
+        padding: 56px 20px;
         text-align: center;
         color: var(--dim);
-        font-size: 14px;
+        font-size: 13.5px;
       }
       .empty-icon {
         display: flex;
         justify-content: center;
-        margin-bottom: 8px;
-        color: var(--dim);
+        margin-bottom: 10px;
+        color: var(--dim-2);
+      }
+      .skeleton-row {
+        height: 58px;
+        border-radius: var(--radius);
+        background: linear-gradient(
+          100deg,
+          var(--surface) 30%,
+          var(--surface-hover) 50%,
+          var(--surface) 70%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.3s ease-in-out infinite;
+        margin-bottom: 6px;
+      }
+      @keyframes shimmer {
+        from {
+          background-position: 150% 0;
+        }
+        to {
+          background-position: -50% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .skeleton-row {
+          animation: none;
+          background: var(--surface);
+        }
       }
 
       /* Code view */
@@ -233,16 +372,16 @@
         padding: 0;
       }
       .filebar {
-        padding: 10px 16px;
+        padding: 10px 14px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         flex-shrink: 0;
         margin: 4px 16px 8px;
         background: var(--surface);
-        border-radius: 14px;
-        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
       }
       .filebar-info {
         min-width: 0;
@@ -251,7 +390,7 @@
         gap: 2px;
       }
       .filebar-name {
-        font-size: 13px;
+        font-size: 12.5px;
         font-weight: 600;
         color: var(--text);
         overflow: hidden;
@@ -261,7 +400,6 @@
       .filebar-dates {
         font-size: 11px;
         color: var(--dim);
-        opacity: 0.7;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -269,73 +407,148 @@
       .filebar-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex-shrink: 0;
       }
-      .filebar a {
-        color: var(--accent);
-        text-decoration: none;
-        font-size: 12px;
-        font-weight: 600;
-        background: var(--accent-soft);
-        padding: 5px 10px;
-        border-radius: 8px;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .copy-btn {
+      .icon-btn {
         border: none;
         cursor: pointer;
         font-family: var(--body-font);
         font-size: 12px;
         font-weight: 600;
-        color: var(--accent);
-        background: var(--accent-soft);
-        padding: 5px 10px;
-        border-radius: 8px;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        border-radius: var(--radius-sm);
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
         transition:
-          background 0.15s,
-          transform 0.1s;
+          background 0.12s var(--ease),
+          border-color 0.12s var(--ease),
+          transform 0.08s var(--ease),
+          color 0.12s var(--ease);
+        text-decoration: none;
+        white-space: nowrap;
       }
-      .copy-btn:hover {
-        background: rgba(108, 92, 231, 0.25);
+      .icon-btn:hover {
+        border-color: #2c2f38;
+        background: var(--surface-hover);
       }
-      .copy-btn:active {
-        transform: scale(0.95);
+      .icon-btn:active {
+        transform: scale(0.94);
       }
-      .copy-btn.copied {
-        background: rgba(46, 160, 67, 0.2);
-        color: #3fb950;
+      .icon-btn.copied {
+        color: var(--ok);
+        border-color: rgba(79, 176, 108, 0.3);
+        background: var(--ok-soft);
       }
       #codewrap {
         flex: 1;
         overflow: auto;
-        margin: 0 16px 16px;
-        border-radius: 16px;
-        box-shadow: var(--shadow);
+        margin: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
       }
       pre[class*="language-"] {
         margin: 0;
         min-height: 100%;
-        border-radius: 16px;
-        font-size: 13px;
-        padding: 16px;
-        background: #171a21 !important;
+        border-radius: var(--radius);
+        font-size: 12.5px;
+        padding: 14px;
+        background: #131419 !important;
       }
       code {
         font-family: var(--mono) !important;
       }
 
+      /* ---- Custom Prism syntax theme (matches the app's dark palette) ---- */
+      code[class*="language-"],
+      pre[class*="language-"] {
+        color: #e7e8ec;
+        text-shadow: none;
+      }
+      .token.comment,
+      .token.prolog,
+      .token.doctype,
+      .token.cdata {
+        color: #6a737d;
+        font-style: italic;
+      }
+      .token.punctuation {
+        color: #8b949e;
+      }
+      .token.namespace {
+        opacity: 0.7;
+      }
+      .token.property,
+      .token.tag,
+      .token.constant,
+      .token.symbol,
+      .token.deleted {
+        color: #ff7b72;
+      }
+      .token.boolean,
+      .token.number {
+        color: #79c0ff;
+      }
+      .token.selector,
+      .token.attr-name,
+      .token.string,
+      .token.char,
+      .token.builtin,
+      .token.inserted {
+        color: #a5d6ff;
+      }
+      .token.operator,
+      .token.entity,
+      .token.url,
+      .language-css .token.string,
+      .style .token.string {
+        color: #ff7b72;
+      }
+      .token.atrule,
+      .token.attr-value,
+      .token.keyword {
+        color: #ff7b72;
+      }
+      .token.function,
+      .token.class-name {
+        color: #d2a8ff;
+      }
+      .token.regex,
+      .token.important,
+      .token.variable {
+        color: #ffa657;
+      }
+      .token.important,
+      .token.bold {
+        font-weight: 600;
+      }
+      .token.italic {
+        font-style: italic;
+      }
+      .token.entity {
+        cursor: help;
+      }
+      /* Preprocessor directives (e.g. #include) */
+      .token.preprocessor {
+        color: #ffa657;
+      }
+      /* Line highlight / selection niceties */
+      ::selection {
+        background: rgba(118, 132, 240, 0.25);
+      }
+      pre[class*="language-"] ::selection {
+        background: rgba(118, 132, 240, 0.25);
+      }
+
       ::-webkit-scrollbar {
-        width: 8px;
+        width: 7px;
       }
       ::-webkit-scrollbar-thumb {
-        background: #3a3f52;
+        background: #2a2c34;
         border-radius: 4px;
       }
 
@@ -343,26 +556,25 @@
       footer {
         flex-shrink: 0;
         text-align: center;
-        padding: 10px 16px 14px;
-        font-size: 12px;
-        color: var(--dim);
+        padding: 8px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        font-size: 11.5px;
+        color: var(--dim-2);
         background: var(--bg);
       }
-      footer .vibe {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 12px;
-        border-radius: 999px;
-        background: var(--accent-soft);
-        color: var(--accent);
-        font-weight: 600;
-        font-size: 11px;
-        letter-spacing: 0.02em;
+
+      /* Small screens */
+      @media (max-width: 380px) {
+        #title {
+          font-size: 18px;
+        }
+        .filebar-dates {
+          display: none;
+        }
       }
     </style>
   </head>
   <body>
+    <div id="offline-banner">You're offline — showing what's already loaded</div>
     <header>
       <button id="back-btn" aria-label="Back"></button>
       <div class="header-text">
@@ -388,21 +600,16 @@
             <span class="filebar-dates" id="current-dates"></span>
           </div>
           <div class="filebar-actions">
-            <button
-              class="copy-btn"
-              id="copy-btn"
-              aria-label="Copy code"
-            ></button>
-            <a id="raw-link" href="#" target="_blank" rel="noopener"></a>
+            <button class="icon-btn" id="copy-btn" aria-label="Copy code"></button>
+            <button class="icon-btn" id="download-btn" aria-label="Download file"></button>
+            <a class="icon-btn" id="raw-link" href="#" target="_blank" rel="noopener"></a>
           </div>
         </div>
         <div id="codewrap"></div>
       </div>
     </div>
 
-    <footer>
-      <span class="vibe"></span>
-    </footer>
+    <footer>kartikcodes26 / DSA_Journey</footer>
 
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
@@ -414,17 +621,17 @@
       const OWNER = "kartikcodes26";
       const REPO = "DSA_Journey";
       const BRANCH_FALLBACK = "main";
+      const FETCH_TIMEOUT_MS = 15000;
 
-      // Files matching these patterns are hidden from the listing
       const HIDDEN_PATTERNS = [
-        /^\./, // dotfiles (.gitignore, .prettierrc, etc.)
-        /^tempCodeRunnerFile/, // VS Code Code Runner temp files
+        /^\./,
+        /^tempCodeRunnerFile/,
         /^index\.html$/,
         /^README\.md$/,
       ];
       // ----------------
 
-      // ---- SVG Icons (feather-style) ----
+      // ---- Feather-style utility icons ----
       const ICON_PATHS = {
         back: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
         external:
@@ -432,15 +639,16 @@
         folder:
           '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
         file: '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>',
-        cpp: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
-        py: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
-        html: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
-        txt: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
         chevron: '<polyline points="9 18 15 12 9 6"/>',
         copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+        download:
+          '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
         check: '<polyline points="20 6 9 17 4 12"/>',
         x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-        bolt: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+        alert:
+          '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+        wifiOff:
+          '<line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
         emptyFolder:
           '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
       };
@@ -449,26 +657,74 @@
         return `<svg class="icon-svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name]}</svg>`;
       }
 
-      function fileIcon(name) {
-        const ext = name.split(".").pop().toLowerCase();
-        if (["cpp", "cc", "c", "h", "hpp"].includes(ext))
-          return icon("cpp", 20);
-        if (["py"].includes(ext)) return icon("py", 20);
-        if (["html", "htm", "xml", "css", "js", "ts", "json"].includes(ext))
-          return icon("html", 20);
-        if (["txt", "md"].includes(ext)) return icon("txt", 20);
-        return icon("file", 20);
+      // ---- Unique per-language file badges (letter-mark, minimal, one color each) ----
+      const LANG_INFO = {
+        cpp: { label: "c++", color: "#6ea8d8" },
+        cc: { label: "c++", color: "#6ea8d8" },
+        h: { label: "h", color: "#6ea8d8" },
+        hpp: { label: "hpp", color: "#6ea8d8" },
+        c: { label: "c", color: "#6ea8d8" },
+        py: { label: "py", color: "#5fa8d3" },
+        js: { label: "js", color: "#d9c25f" },
+        jsx: { label: "jsx", color: "#6fc2d0" },
+        ts: { label: "ts", color: "#5b8fd9" },
+        tsx: { label: "tsx", color: "#5b8fd9" },
+        java: { label: "jv", color: "#d98f4e" },
+        html: { label: "<>", color: "#d98058" },
+        htm: { label: "<>", color: "#d98058" },
+        css: { label: "css", color: "#5fa8d8" },
+        json: { label: "{}", color: "#9a9ba3" },
+        md: { label: "md", color: "#8891e0" },
+        sh: { label: "sh", color: "#7cbf6d" },
+        bash: { label: "sh", color: "#7cbf6d" },
+        yml: { label: "yml", color: "#c77aa3" },
+        yaml: { label: "yml", color: "#c77aa3" },
+        sql: { label: "sql", color: "#c9a35a" },
+        kt: { label: "kt", color: "#b285d6" },
+        swift: { label: "sw", color: "#d97a52" },
+        go: { label: "go", color: "#66c2ce" },
+        rs: { label: "rs", color: "#c98764" },
+        rb: { label: "rb", color: "#c9605f" },
+        php: { label: "php", color: "#8285b0" },
+        cs: { label: "c#", color: "#7c9ed9" },
+        txt: { label: "txt", color: "#86878f" },
+        gitignore: { label: "git", color: "#86878f" },
+      };
+      const DEFAULT_LANG = { label: "•", color: "#86878f" };
+
+      function langBadgeSvg(label, color, sizePx = 34) {
+        const fontSize = label.length > 3 ? 8.5 : label.length === 3 ? 9.5 : 11;
+        return `<svg class="icon-svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 34 34">
+          <rect x="0.5" y="0.5" width="33" height="33" rx="9" fill="${color}22" stroke="${color}44" stroke-width="1"/>
+          <text x="17" y="17" text-anchor="middle" dominant-baseline="central"
+            font-family="'JetBrains Mono', ui-monospace, monospace" font-weight="600"
+            font-size="${fontSize}" fill="${color}" letter-spacing="-0.3">${label}</text>
+        </svg>`;
+      }
+
+      function fileIconHtml(name) {
+        const ext = name.includes(".")
+          ? name.split(".").pop().toLowerCase()
+          : name.replace(/^\./, "").toLowerCase();
+        const info = LANG_INFO[ext] || DEFAULT_LANG;
+        return langBadgeSvg(info.label, info.color);
       }
 
       function formatDate(iso) {
-        if (!iso) return "—";
+        if (!iso) return null;
         const d = new Date(iso);
-        if (isNaN(d)) return "—";
+        if (isNaN(d)) return null;
         return d.toLocaleDateString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
         });
+      }
+
+      function formatBytes(bytes) {
+        if (bytes == null) return "";
+        if (bytes < 1024) return `${bytes} B`;
+        return `${(bytes / 1024).toFixed(1)} KB`;
       }
       // ------------------------------------
 
@@ -487,36 +743,72 @@
       const rawLinkEl = document.getElementById("raw-link");
       const codewrap = document.getElementById("codewrap");
       const copyBtn = document.getElementById("copy-btn");
+      const downloadBtn = document.getElementById("download-btn");
+      const offlineBanner = document.getElementById("offline-banner");
 
       backBtn.innerHTML = icon("back", 18);
       copyBtn.innerHTML = icon("copy", 14) + " Copy";
-      rawLinkEl.innerHTML = icon("external", 12) + " View raw";
-      document.querySelector(".vibe").innerHTML =
-        icon("bolt", 12) + " vibe coded";
+      downloadBtn.innerHTML = icon("download", 14) + " Save";
+      rawLinkEl.innerHTML = icon("external", 12) + " Raw";
 
       let currentCode = "";
+      let currentFileName = "";
+      let activeController = null; // aborts stale in-flight requests
+
+      function setOnlineStatus() {
+        offlineBanner.classList.toggle("show", !navigator.onLine);
+      }
+      window.addEventListener("online", () => {
+        setOnlineStatus();
+        const top = stack[stack.length - 1];
+        if (typeof top === "string") renderFolder(top);
+      });
+      window.addEventListener("offline", setOnlineStatus);
+      setOnlineStatus();
 
       copyBtn.addEventListener("click", async () => {
         if (!currentCode) return;
         try {
           await navigator.clipboard.writeText(currentCode);
-          copyBtn.classList.add("copied");
-          copyBtn.innerHTML = icon("check", 14) + " Copied!";
-          setTimeout(() => {
-            copyBtn.classList.remove("copied");
-            copyBtn.innerHTML = icon("copy", 14) + " Copy";
-          }, 2000);
+          flashButton(copyBtn, "check", "Copied");
         } catch (err) {
-          copyBtn.innerHTML = icon("x", 14) + " Failed";
-          setTimeout(() => {
-            copyBtn.innerHTML = icon("copy", 14) + " Copy";
-          }, 2000);
+          flashButton(copyBtn, "x", "Failed");
         }
       });
 
+      downloadBtn.addEventListener("click", () => {
+        if (!currentCode) return;
+        try {
+          const blob = new Blob([currentCode], { type: "text/plain;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = currentFileName || "file.txt";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          flashButton(downloadBtn, "check", "Saved");
+        } catch (err) {
+          flashButton(downloadBtn, "x", "Failed");
+        }
+      });
+
+      function flashButton(btn, iconName, label) {
+        const original = btn.innerHTML;
+        btn.classList.add("copied");
+        btn.innerHTML = icon(iconName, 14) + " " + label;
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = original;
+        }, 1800);
+      }
+
       const LANG_MAP = {
         js: "javascript",
+        jsx: "jsx",
         ts: "typescript",
+        tsx: "tsx",
         py: "python",
         java: "java",
         cpp: "cpp",
@@ -536,6 +828,7 @@
         json: "json",
         md: "markdown",
         sh: "bash",
+        bash: "bash",
         yml: "yaml",
         yaml: "yaml",
         sql: "sql",
@@ -545,16 +838,50 @@
         gitignore: "none",
       };
 
-      // navigation stack: array of path strings, '' = root
+      // navigation stack: array of path strings, '' = root, or {__file:true} markers
       let stack = [""];
 
+      async function fetchWithTimeout(url, opts = {}) {
+        const controller = new AbortController();
+        activeController = controller;
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        try {
+          const res = await fetch(url, { ...opts, signal: controller.signal });
+          return res;
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+
       async function ghFetch(path) {
-        const res = await fetch(`${API}/contents/${path}`);
+        let res;
+        try {
+          res = await fetchWithTimeout(
+            `${API}/contents/${encodeURI(path)}`,
+            { headers: { Accept: "application/vnd.github+json" } },
+          );
+        } catch (err) {
+          if (err.name === "AbortError") {
+            throw new Error("Request timed out — check your connection.");
+          }
+          throw new Error("Couldn't reach GitHub. Check your connection.");
+        }
         if (!res.ok) {
-          if (res.status === 403)
-            throw new Error(
-              "Too many requests right now — give it a minute and try again.",
-            );
+          if (res.status === 403 || res.status === 429) {
+            const remaining = res.headers.get("x-ratelimit-remaining");
+            const reset = res.headers.get("x-ratelimit-reset");
+            if (remaining === "0" && reset) {
+              const waitSec = Math.max(
+                0,
+                Math.ceil(Number(reset) - Date.now() / 1000),
+              );
+              const mins = Math.ceil(waitSec / 60);
+              throw new Error(
+                `Rate limited by GitHub — try again in about ${mins} minute${mins === 1 ? "" : "s"}.`,
+              );
+            }
+            throw new Error("Too many requests right now — try again shortly.");
+          }
           if (res.status === 404) throw new Error("Couldn't find that.");
           throw new Error(`Something went wrong (${res.status}).`);
         }
@@ -576,21 +903,52 @@
         titleEl.textContent = path === "" ? REPO : path.split("/").pop();
       }
 
+      function renderSkeleton() {
+        listView.innerHTML = "";
+        const wrap = document.createElement("div");
+        for (let i = 0; i < 6; i++) {
+          const s = document.createElement("div");
+          s.className = "skeleton-row";
+          wrap.appendChild(s);
+        }
+        listView.appendChild(wrap);
+      }
+
+      function errorStatus(message, onRetry) {
+        const el = document.createElement("div");
+        el.className = "status error";
+        el.innerHTML = `<span class="status-icon">${icon(
+          navigator.onLine ? "alert" : "wifiOff",
+          26,
+        )}</span><span>${message}</span>`;
+        const btn = document.createElement("button");
+        btn.className = "retry-btn";
+        btn.textContent = "Try again";
+        btn.addEventListener("click", onRetry);
+        el.appendChild(btn);
+        return el;
+      }
+
       async function renderFolder(path) {
         showList();
         updateHeader(path);
-        listView.innerHTML = `<div class="status">Loading…</div>`;
+        renderSkeleton();
         try {
           const items = await ghFetch(path);
           if (!Array.isArray(items)) {
-            listView.innerHTML = `<div class="status error">That doesn't look like a folder.</div>`;
+            listView.innerHTML = "";
+            listView.appendChild(
+              errorStatus("That doesn't look like a folder.", () =>
+                renderFolder(path),
+              ),
+            );
             return;
           }
           const visible = items.filter(
             (item) => !HIDDEN_PATTERNS.some((re) => re.test(item.name)),
           );
           if (visible.length === 0) {
-            listView.innerHTML = `<div class="empty"><span class="empty-icon">${icon("emptyFolder", 32)}</span>Nothing to see here.</div>`;
+            listView.innerHTML = `<div class="empty"><span class="empty-icon">${icon("emptyFolder", 30)}</span>Nothing to see here.</div>`;
             return;
           }
           const sorted = [...visible].sort((a, b) => {
@@ -599,40 +957,80 @@
           });
           const list = document.createElement("div");
           list.className = "card-list";
-          for (const item of sorted) {
+          sorted.forEach((item, i) => {
             const row = document.createElement("div");
             row.className = "row";
+            row.style.animationDelay = `${Math.min(i, 10) * 18}ms`;
+            const createdLabel = formatDate(item.created_at);
+            const updatedLabel = formatDate(item.updated_at);
+            const dateBits = [];
+            if (createdLabel) dateBits.push(`Created ${createdLabel}`);
+            if (updatedLabel) dateBits.push(`Modified ${updatedLabel}`);
+
             if (item.type === "dir") {
               row.innerHTML = `
-          <div class="badge folder">${icon("folder", 20)}</div>
+          <div class="badge folder">${icon("folder", 18)}</div>
           <div class="row-info">
-            <div class="row-name">${item.name}</div>
-            <div class="row-sub">Folder</div>
-            <div class="row-sub date">Created ${formatDate(item.created_at)} · Modified ${formatDate(item.updated_at)}</div>
+            <div class="row-name">${escapeHtml(item.name)}</div>
+            <div class="row-sub">Folder${dateBits.length ? `<span class="dot">·</span>${dateBits.join(" · ")}` : ""}</div>
           </div>
-          <div class="row-chev">${icon("chevron", 16)}</div>`;
+          <div class="row-chev">${icon("chevron", 15)}</div>`;
               row.addEventListener("click", () => {
                 stack.push(item.path);
                 renderFolder(item.path);
               });
             } else {
+              const sizeLabel = formatBytes(item.size);
               row.innerHTML = `
-          <div class="badge file">${fileIcon(item.name)}</div>
+          <div class="badge">${fileIconHtml(item.name)}</div>
           <div class="row-info">
-            <div class="row-name">${item.name}</div>
-            <div class="row-sub">${(item.size / 1024).toFixed(1)} KB</div>
-            <div class="row-sub date">Created ${formatDate(item.created_at)} · Modified ${formatDate(item.updated_at)}</div>
+            <div class="row-name">${escapeHtml(item.name)}</div>
+            <div class="row-sub">${sizeLabel}${dateBits.length ? `<span class="dot">·</span>${dateBits.join(" · ")}` : ""}</div>
           </div>
-          <div class="row-chev">${icon("chevron", 16)}</div>`;
+          <div class="row-chev">${icon("chevron", 15)}</div>`;
               row.addEventListener("click", () => openFile(item));
             }
             list.appendChild(row);
-          }
+          });
           listView.innerHTML = "";
           listView.appendChild(list);
         } catch (err) {
-          listView.innerHTML = `<div class="status error">${err.message}</div>`;
+          listView.innerHTML = "";
+          listView.appendChild(errorStatus(err.message, () => renderFolder(path)));
         }
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      async function fetchFileContent(item) {
+        // Prefer the direct download_url; fall back to the git blob API
+        // for large files where GitHub omits download_url.
+        if (item.download_url) {
+          const res = await fetchWithTimeout(item.download_url);
+          if (!res.ok) throw new Error(`Couldn't load this file (${res.status}).`);
+          return res.text();
+        }
+        if (item.git_url) {
+          const res = await fetchWithTimeout(item.git_url, {
+            headers: { Accept: "application/vnd.github+json" },
+          });
+          if (!res.ok) throw new Error(`Couldn't load this file (${res.status}).`);
+          const data = await res.json();
+          if (data.encoding === "base64") {
+            return decodeURIComponent(
+              atob(data.content.replace(/\n/g, ""))
+                .split("")
+                .map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+                .join(""),
+            );
+          }
+          return data.content || "";
+        }
+        throw new Error("This file can't be previewed.");
       }
 
       async function openFile(item) {
@@ -642,20 +1040,28 @@
           item.path.split("/").slice(0, -1).join(" / ") || OWNER;
         titleEl.textContent = item.name;
         currentPathEl.textContent = item.name;
-        currentDatesEl.textContent = `Created ${formatDate(item.created_at)} · Modified ${formatDate(item.updated_at)}`;
+        currentFileName = item.name;
+        const createdLabel = formatDate(item.created_at);
+        const updatedLabel = formatDate(item.updated_at);
+        currentDatesEl.textContent = [
+          createdLabel ? `Created ${createdLabel}` : null,
+          updatedLabel ? `Modified ${updatedLabel}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
         rawLinkEl.href =
           item.html_url ||
           `https://github.com/${OWNER}/${REPO}/blob/${BRANCH_FALLBACK}/${item.path}`;
-        codewrap.innerHTML = `<div class="status">Loading ${item.name}…</div>`;
+        codewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}…</div>`;
+        currentCode = "";
 
         try {
-          const res = await fetch(item.download_url);
-          if (!res.ok)
-            throw new Error(`Couldn't load this file (${res.status}).`);
-          const text = await res.text();
+          const text = await fetchFileContent(item);
           currentCode = text;
 
-          const ext = item.name.split(".").pop().toLowerCase();
+          const ext = item.name.includes(".")
+            ? item.name.split(".").pop().toLowerCase()
+            : "";
           const lang = LANG_MAP[ext] || "none";
 
           const pre = document.createElement("pre");
@@ -667,11 +1073,25 @@
 
           codewrap.innerHTML = "";
           codewrap.appendChild(pre);
-          Prism.highlightElement(code);
+          if (lang !== "none") {
+            try {
+              Prism.highlightElement(code);
+            } catch (e) {
+              // Highlighting is best-effort; raw text is already visible.
+            }
+          }
 
           stack.push({ __file: true });
         } catch (err) {
-          codewrap.innerHTML = `<div class="status error">${err.message}</div>`;
+          codewrap.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.style.padding = "8px";
+          wrap.appendChild(
+            errorStatus(err.message || "Couldn't load this file.", () =>
+              openFile(item),
+            ),
+          );
+          codewrap.appendChild(wrap);
         }
       }
 
@@ -682,6 +1102,12 @@
         if (typeof top === "string") {
           renderFolder(top);
         }
+      });
+
+      window.addEventListener("error", (e) => {
+        // Swallow stray script errors (e.g. from CDN hiccups) so the UI
+        // doesn't get stuck on a blank screen.
+        console.error("Unhandled error:", e.error || e.message);
       });
 
       renderFolder("");
