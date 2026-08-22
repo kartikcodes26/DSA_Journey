@@ -27,6 +27,10 @@
         --dim-2: #55565e;
         --accent: #7684f0;
         --accent-soft: rgba(118, 132, 240, 0.13);
+        --accent-2: #5fc9b8;
+        --accent-2-soft: rgba(95, 201, 184, 0.13);
+        --accent-3: #ef8fae;
+        --accent-3-soft: rgba(239, 143, 174, 0.13);
         --folder: #c9a768;
         --folder-soft: rgba(201, 167, 104, 0.12);
         --danger: #e2664f;
@@ -39,6 +43,17 @@
         --heading-font: "Outfit", sans-serif;
         --body-font: "Inter", sans-serif;
         --mono: "JetBrains Mono", ui-monospace, monospace;
+
+        /* syntax token palette */
+        --tok-comment: #74807a;
+        --tok-keyword: #ef8fae;
+        --tok-string: #8ad9b5;
+        --tok-number: #f0b464;
+        --tok-function: #a68bf0;
+        --tok-tag: #ef8d75;
+        --tok-operator: #74b8e0;
+        --tok-variable: #f0b464;
+        --tok-punctuation: #8b949e;
       }
       * {
         box-sizing: border-box;
@@ -86,13 +101,29 @@
 
       /* Header */
       header {
+        position: relative;
         padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 12px;
         flex-shrink: 0;
         background: var(--bg);
         display: flex;
         align-items: center;
         gap: 10px;
-        border-bottom: 1px solid transparent;
+        border-bottom: 1px solid var(--border);
+      }
+      header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          var(--accent) 0%,
+          var(--accent-2) 55%,
+          var(--accent-3) 100%
+        );
+        opacity: 0.55;
       }
       #back-btn {
         width: 36px;
@@ -108,11 +139,15 @@
         border-radius: var(--radius-sm);
         transition:
           background 0.12s var(--ease),
+          border-color 0.12s var(--ease),
           transform 0.1s var(--ease);
       }
       #back-btn.show {
         display: flex;
         animation: fade-in 0.15s var(--ease);
+      }
+      #back-btn:hover {
+        border-color: var(--accent);
       }
       #back-btn:active {
         transform: scale(0.92);
@@ -141,7 +176,7 @@
         text-overflow: ellipsis;
         letter-spacing: -0.01em;
       }
-      .repo-link {
+      .header-icon-btn {
         width: 36px;
         height: 36px;
         flex-shrink: 0;
@@ -153,10 +188,106 @@
         justify-content: center;
         color: var(--dim);
         text-decoration: none;
-        transition: background 0.12s var(--ease);
+        cursor: pointer;
+        transition:
+          background 0.12s var(--ease),
+          border-color 0.12s var(--ease),
+          color 0.12s var(--ease);
       }
-      .repo-link:active {
+      .header-icon-btn:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+      .header-icon-btn:active {
         background: var(--surface-hover);
+      }
+      .header-icon-btn.active {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      /* Search panel */
+      #search-panel {
+        display: none;
+        margin: 4px 16px 8px;
+      }
+      #search-panel.show {
+        display: block;
+        animation: fade-in 0.15s var(--ease);
+      }
+      .search-panel-inner {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        flex-wrap: wrap;
+      }
+      .search-panel-icon {
+        color: var(--accent);
+        display: flex;
+        flex-shrink: 0;
+        margin-left: 2px;
+      }
+      #search-input {
+        flex: 1;
+        min-width: 140px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 13px;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.12s var(--ease);
+      }
+      #search-input::placeholder {
+        color: var(--dim-2);
+      }
+      #search-input:focus {
+        border-color: var(--accent);
+      }
+      .mini-btn {
+        border: 1px solid rgba(118, 132, 240, 0.35);
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-family: inherit;
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition:
+          background 0.12s var(--ease),
+          transform 0.08s var(--ease);
+        white-space: nowrap;
+      }
+      .mini-btn:hover {
+        background: rgba(118, 132, 240, 0.22);
+      }
+      .mini-btn:active {
+        transform: scale(0.95);
+      }
+      .mini-btn.ghost {
+        background: var(--bg);
+        border-color: var(--border);
+        color: var(--dim);
+        padding: 8px 9px;
+      }
+      .mini-btn.ghost:hover {
+        border-color: var(--dim-2);
+        color: var(--text);
+      }
+      .result-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--accent-3);
+        font-weight: 600;
       }
 
       /* Views */
@@ -200,6 +331,7 @@
         transition:
           background 0.12s var(--ease),
           border-color 0.12s var(--ease),
+          box-shadow 0.12s var(--ease),
           transform 0.08s var(--ease);
         opacity: 0;
         animation: row-in 0.22s var(--ease) forwards;
@@ -224,8 +356,9 @@
         }
       }
       .row:hover {
-        border-color: #2c2f38;
+        border-color: var(--accent);
         background: var(--surface-hover);
+        box-shadow: inset 2px 0 0 var(--accent);
       }
       .row:active {
         transform: scale(0.988);
@@ -287,6 +420,7 @@
       }
       .row:hover .row-chev {
         transform: translateX(1px);
+        color: var(--accent);
       }
 
       .status {
@@ -319,7 +453,12 @@
         padding: 7px 14px;
         border-radius: var(--radius-sm);
         cursor: pointer;
-        transition: background 0.12s var(--ease);
+        transition:
+          background 0.12s var(--ease),
+          border-color 0.12s var(--ease);
+      }
+      .retry-btn:hover {
+        border-color: var(--accent);
       }
       .retry-btn:active {
         background: var(--surface-hover);
@@ -381,6 +520,7 @@
         margin: 4px 16px 8px;
         background: var(--surface);
         border: 1px solid var(--border);
+        border-top: 2px solid var(--accent);
         border-radius: var(--radius);
       }
       .filebar-info {
@@ -433,7 +573,7 @@
         white-space: nowrap;
       }
       .icon-btn:hover {
-        border-color: #2c2f38;
+        border-color: var(--accent);
         background: var(--surface-hover);
       }
       .icon-btn:active {
@@ -463,7 +603,7 @@
         font-family: var(--mono) !important;
       }
 
-      /* ---- Custom Prism syntax theme (matches the app's dark palette) ---- */
+      /* ---- Custom Prism syntax theme (colorful, matches the app's palette) ---- */
       code[class*="language-"],
       pre[class*="language-"] {
         color: #e7e8ec;
@@ -473,25 +613,25 @@
       .token.prolog,
       .token.doctype,
       .token.cdata {
-        color: #6a737d;
+        color: var(--tok-comment);
         font-style: italic;
       }
       .token.punctuation {
-        color: #8b949e;
+        color: var(--tok-punctuation);
       }
       .token.namespace {
-        opacity: 0.7;
+        opacity: 0.75;
       }
       .token.property,
       .token.tag,
       .token.constant,
       .token.symbol,
       .token.deleted {
-        color: #ff7b72;
+        color: var(--tok-tag);
       }
       .token.boolean,
       .token.number {
-        color: #79c0ff;
+        color: var(--tok-number);
       }
       .token.selector,
       .token.attr-name,
@@ -499,28 +639,29 @@
       .token.char,
       .token.builtin,
       .token.inserted {
-        color: #a5d6ff;
+        color: var(--tok-string);
       }
       .token.operator,
       .token.entity,
       .token.url,
       .language-css .token.string,
       .style .token.string {
-        color: #ff7b72;
+        color: var(--tok-operator);
       }
       .token.atrule,
       .token.attr-value,
       .token.keyword {
-        color: #ff7b72;
+        color: var(--tok-keyword);
+        font-weight: 500;
       }
       .token.function,
       .token.class-name {
-        color: #d2a8ff;
+        color: var(--tok-function);
       }
       .token.regex,
       .token.important,
       .token.variable {
-        color: #ffa657;
+        color: var(--tok-variable);
       }
       .token.important,
       .token.bold {
@@ -534,7 +675,7 @@
       }
       /* Preprocessor directives (e.g. #include) */
       .token.preprocessor {
-        color: #ffa657;
+        color: var(--tok-variable);
       }
       /* Line highlight / selection niceties */
       ::selection {
@@ -550,6 +691,9 @@
       ::-webkit-scrollbar-thumb {
         background: #2a2c34;
         border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #34363f;
       }
 
       /* Footer */
@@ -574,15 +718,23 @@
     </style>
   </head>
   <body>
-    <div id="offline-banner">You're offline — showing what's already loaded</div>
+    <div id="offline-banner">
+      You're offline — showing what's already loaded
+    </div>
     <header>
       <button id="back-btn" aria-label="Back"></button>
       <div class="header-text">
         <div id="crumb">kartikcodes26</div>
         <div id="title">DSA Journey</div>
       </div>
+      <button
+        class="header-icon-btn"
+        id="search-toggle-btn"
+        aria-label="Search by LeetCode problem number"
+        title="Search by LeetCode problem number"
+      ></button>
       <a
-        class="repo-link"
+        class="header-icon-btn"
         id="repo-link"
         href="#"
         target="_blank"
@@ -590,6 +742,26 @@
         title="Open on GitHub"
       ></a>
     </header>
+
+    <div id="search-panel">
+      <div class="search-panel-inner">
+        <span class="search-panel-icon" id="search-panel-icon"></span>
+        <input
+          id="search-input"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="LeetCode problem number, e.g. 789"
+          aria-label="LeetCode problem number"
+        />
+        <button class="mini-btn" id="search-go-btn">Search</button>
+        <button
+          class="mini-btn ghost"
+          id="search-close-btn"
+          aria-label="Close search"
+        ></button>
+      </div>
+    </div>
 
     <div id="app">
       <div class="view" id="list-view"></div>
@@ -600,9 +772,23 @@
             <span class="filebar-dates" id="current-dates"></span>
           </div>
           <div class="filebar-actions">
-            <button class="icon-btn" id="copy-btn" aria-label="Copy code"></button>
-            <button class="icon-btn" id="download-btn" aria-label="Download file"></button>
-            <a class="icon-btn" id="raw-link" href="#" target="_blank" rel="noopener"></a>
+            <button
+              class="icon-btn"
+              id="copy-btn"
+              aria-label="Copy code"
+            ></button>
+            <button
+              class="icon-btn"
+              id="download-btn"
+              aria-label="Download file"
+            ></button>
+            <a
+              class="icon-btn"
+              id="raw-link"
+              href="#"
+              target="_blank"
+              rel="noopener"
+            ></a>
           </div>
         </div>
         <div id="codewrap"></div>
@@ -651,6 +837,8 @@
           '<line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
         emptyFolder:
           '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+        search:
+          '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
       };
 
       function icon(name, size = 18) {
@@ -746,10 +934,20 @@
       const downloadBtn = document.getElementById("download-btn");
       const offlineBanner = document.getElementById("offline-banner");
 
+      const searchToggleBtn = document.getElementById("search-toggle-btn");
+      const searchPanel = document.getElementById("search-panel");
+      const searchPanelIcon = document.getElementById("search-panel-icon");
+      const searchInput = document.getElementById("search-input");
+      const searchGoBtn = document.getElementById("search-go-btn");
+      const searchCloseBtn = document.getElementById("search-close-btn");
+
       backBtn.innerHTML = icon("back", 18);
       copyBtn.innerHTML = icon("copy", 14) + " Copy";
       downloadBtn.innerHTML = icon("download", 14) + " Save";
       rawLinkEl.innerHTML = icon("external", 12) + " Raw";
+      searchToggleBtn.innerHTML = icon("search", 16);
+      searchPanelIcon.innerHTML = icon("search", 15);
+      searchCloseBtn.innerHTML = icon("x", 13);
 
       let currentCode = "";
       let currentFileName = "";
@@ -779,7 +977,9 @@
       downloadBtn.addEventListener("click", () => {
         if (!currentCode) return;
         try {
-          const blob = new Blob([currentCode], { type: "text/plain;charset=utf-8" });
+          const blob = new Blob([currentCode], {
+            type: "text/plain;charset=utf-8",
+          });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -838,7 +1038,8 @@
         gitignore: "none",
       };
 
-      // navigation stack: array of path strings, '' = root, or {__file:true} markers
+      // navigation stack: array of path strings ('' = root), {__file:true} markers,
+      // or {__search:true} markers for the LeetCode-search results view
       let stack = [""];
 
       async function fetchWithTimeout(url, opts = {}) {
@@ -856,10 +1057,9 @@
       async function ghFetch(path) {
         let res;
         try {
-          res = await fetchWithTimeout(
-            `${API}/contents/${encodeURI(path)}`,
-            { headers: { Accept: "application/vnd.github+json" } },
-          );
+          res = await fetchWithTimeout(`${API}/contents/${encodeURI(path)}`, {
+            headers: { Accept: "application/vnd.github+json" },
+          });
         } catch (err) {
           if (err.name === "AbortError") {
             throw new Error("Request timed out — check your connection.");
@@ -996,7 +1196,9 @@
           listView.appendChild(list);
         } catch (err) {
           listView.innerHTML = "";
-          listView.appendChild(errorStatus(err.message, () => renderFolder(path)));
+          listView.appendChild(
+            errorStatus(err.message, () => renderFolder(path)),
+          );
         }
       }
 
@@ -1011,14 +1213,16 @@
         // for large files where GitHub omits download_url.
         if (item.download_url) {
           const res = await fetchWithTimeout(item.download_url);
-          if (!res.ok) throw new Error(`Couldn't load this file (${res.status}).`);
+          if (!res.ok)
+            throw new Error(`Couldn't load this file (${res.status}).`);
           return res.text();
         }
         if (item.git_url) {
           const res = await fetchWithTimeout(item.git_url, {
             headers: { Accept: "application/vnd.github+json" },
           });
-          if (!res.ok) throw new Error(`Couldn't load this file (${res.status}).`);
+          if (!res.ok)
+            throw new Error(`Couldn't load this file (${res.status}).`);
           const data = await res.json();
           if (data.encoding === "base64") {
             return decodeURIComponent(
@@ -1095,12 +1299,161 @@
         }
       }
 
+      // ---- LeetCode problem-number search ----
+      // Every solution file has a "Problem No : <n>" marker in it, so this
+      // uses GitHub's code search to find files that mention a given number.
+      let lastSearchQuery = "";
+      let lastSearchResults = [];
+
+      function openSearchPanel() {
+        searchPanel.classList.add("show");
+        searchToggleBtn.classList.add("active");
+        searchInput.focus();
+      }
+      function closeSearchPanel() {
+        searchPanel.classList.remove("show");
+        searchToggleBtn.classList.remove("active");
+      }
+
+      searchToggleBtn.addEventListener("click", () => {
+        if (searchPanel.classList.contains("show")) {
+          closeSearchPanel();
+        } else {
+          openSearchPanel();
+        }
+      });
+      searchCloseBtn.addEventListener("click", closeSearchPanel);
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          triggerSearch();
+        } else if (e.key === "Escape") {
+          closeSearchPanel();
+        }
+      });
+      searchGoBtn.addEventListener("click", triggerSearch);
+
+      function triggerSearch() {
+        const num = searchInput.value.replace(/[^0-9]/g, "").trim();
+        if (!num) {
+          searchInput.focus();
+          return;
+        }
+        closeSearchPanel();
+        runSearch(num);
+      }
+
+      async function runSearch(num) {
+        showList();
+        stack.push({ __search: true });
+        backBtn.classList.add("show");
+        crumbEl.textContent = "Search results";
+        titleEl.textContent = `LeetCode #${num}`;
+        renderSkeleton();
+        lastSearchQuery = num;
+        try {
+          const q = encodeURIComponent(
+            `"Problem No" ${num} in:file repo:${OWNER}/${REPO}`,
+          );
+          const res = await fetchWithTimeout(
+            `https://api.github.com/search/code?q=${q}`,
+            { headers: { Accept: "application/vnd.github+json" } },
+          );
+          if (!res.ok) {
+            if (res.status === 403 || res.status === 429) {
+              throw new Error(
+                "GitHub's search is rate-limited right now — try again in a minute.",
+              );
+            }
+            if (res.status === 422) {
+              throw new Error(
+                "That search didn't work — try a different number.",
+              );
+            }
+            throw new Error(`Something went wrong (${res.status}).`);
+          }
+          const data = await res.json();
+          lastSearchResults = data.items || [];
+          renderSearchResults(num, lastSearchResults);
+        } catch (err) {
+          listView.innerHTML = "";
+          listView.appendChild(
+            errorStatus(err.message || "Couldn't search right now.", () =>
+              runSearch(num),
+            ),
+          );
+        }
+      }
+
+      function renderSearchResults(num, items) {
+        showList();
+        crumbEl.textContent = "Search results";
+        titleEl.textContent = `LeetCode #${num}`;
+        backBtn.classList.add("show");
+        if (!items.length) {
+          listView.innerHTML = `<div class="empty"><span class="empty-icon">${icon("emptyFolder", 30)}</span>No files tagged with LeetCode problem #${escapeHtml(num)}.</div>`;
+          return;
+        }
+        const list = document.createElement("div");
+        list.className = "card-list";
+        items.forEach((item, i) => {
+          const row = document.createElement("div");
+          row.className = "row";
+          row.style.animationDelay = `${Math.min(i, 10) * 18}ms`;
+          const dirPath = item.path.split("/").slice(0, -1).join(" / ");
+          row.innerHTML = `
+          <div class="badge">${fileIconHtml(item.name)}</div>
+          <div class="row-info">
+            <div class="row-name">${escapeHtml(item.name)}</div>
+            <div class="row-sub">${dirPath ? escapeHtml(dirPath) : OWNER}<span class="dot">·</span><span class="result-tag">${icon("search", 11)} #${escapeHtml(num)}</span></div>
+          </div>
+          <div class="row-chev">${icon("chevron", 15)}</div>`;
+          row.addEventListener("click", () => openSearchResult(item));
+          list.appendChild(row);
+        });
+        listView.innerHTML = "";
+        listView.appendChild(list);
+      }
+
+      async function openSearchResult(item) {
+        showCode();
+        backBtn.classList.add("show");
+        titleEl.textContent = item.name;
+        crumbEl.textContent =
+          item.path.split("/").slice(0, -1).join(" / ") || OWNER;
+        codewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}…</div>`;
+        try {
+          // item.url is the contents-API URL for this exact blob — reuse it
+          // to get download_url etc., then hand off to the normal file view.
+          const res = await fetchWithTimeout(item.url, {
+            headers: { Accept: "application/vnd.github+json" },
+          });
+          if (!res.ok)
+            throw new Error(`Couldn't load this file (${res.status}).`);
+          const full = await res.json();
+          await openFile(full);
+        } catch (err) {
+          codewrap.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.style.padding = "8px";
+          wrap.appendChild(
+            errorStatus(err.message || "Couldn't load this file.", () =>
+              openSearchResult(item),
+            ),
+          );
+          codewrap.appendChild(wrap);
+        }
+      }
+      // ---- end search ----
+
       backBtn.addEventListener("click", () => {
         if (stack.length <= 1) return;
         stack.pop();
         const top = stack[stack.length - 1];
         if (typeof top === "string") {
           renderFolder(top);
+        } else if (top && top.__search) {
+          renderSearchResults(lastSearchQuery, lastSearchResults);
         }
       });
 
