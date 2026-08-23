@@ -591,6 +591,35 @@
         border-radius: var(--radius);
         border: 1px solid var(--border);
       }
+
+      /* Image view */
+      #image-view {
+        display: none;
+        flex-direction: column;
+        padding: 0;
+      }
+      #imagewrap {
+        flex: 1;
+        overflow: auto;
+        margin: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: #131419;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      #imagewrap img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: var(--radius-sm);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        object-fit: contain;
+      }
+      #imagewrap .status {
+        width: 100%;
+      }
       pre[class*="language-"] {
         margin: 0;
         min-height: 100%;
@@ -761,6 +790,17 @@
           aria-label="Close search"
         ></button>
       </div>
+      <div class="search-panel-inner" style="margin-top: 6px">
+        <span class="search-panel-icon" id="token-icon"></span>
+        <input
+          id="token-input"
+          type="password"
+          placeholder="GitHub token (optional — enables search)"
+          aria-label="GitHub personal access token"
+          autocomplete="off"
+        />
+        <button class="mini-btn" id="token-save-btn">Save</button>
+      </div>
     </div>
 
     <div id="app">
@@ -792,6 +832,29 @@
           </div>
         </div>
         <div id="codewrap"></div>
+      </div>
+      <div class="view" id="image-view">
+        <div class="filebar">
+          <div class="filebar-info">
+            <span class="filebar-name" id="image-path"></span>
+            <span class="filebar-dates" id="image-dates"></span>
+          </div>
+          <div class="filebar-actions">
+            <button
+              class="icon-btn"
+              id="image-download-btn"
+              aria-label="Download image"
+            ></button>
+            <a
+              class="icon-btn"
+              id="image-raw-link"
+              href="#"
+              target="_blank"
+              rel="noopener"
+            ></a>
+          </div>
+        </div>
+        <div id="imagewrap"></div>
       </div>
     </div>
 
@@ -877,8 +940,28 @@
         cs: { label: "c#", color: "#7c9ed9" },
         txt: { label: "txt", color: "#86878f" },
         gitignore: { label: "git", color: "#86878f" },
+        png: { label: "img", color: "#5fc9b8" },
+        jpg: { label: "img", color: "#5fc9b8" },
+        jpeg: { label: "img", color: "#5fc9b8" },
+        gif: { label: "img", color: "#5fc9b8" },
+        svg: { label: "img", color: "#5fc9b8" },
+        webp: { label: "img", color: "#5fc9b8" },
+        bmp: { label: "img", color: "#5fc9b8" },
+        ico: { label: "img", color: "#5fc9b8" },
       };
       const DEFAULT_LANG = { label: "•", color: "#86878f" };
+
+      // Image file extensions that should open in the image viewer
+      const IMAGE_EXTENSIONS = new Set([
+        "png",
+        "jpg",
+        "jpeg",
+        "gif",
+        "svg",
+        "webp",
+        "bmp",
+        "ico",
+      ]);
 
       function langBadgeSvg(label, color, sizePx = 34) {
         const fontSize = label.length > 3 ? 8.5 : label.length === 3 ? 9.5 : 11;
@@ -923,6 +1006,7 @@
 
       const listView = document.getElementById("list-view");
       const codeView = document.getElementById("code-view");
+      const imageView = document.getElementById("image-view");
       const backBtn = document.getElementById("back-btn");
       const crumbEl = document.getElementById("crumb");
       const titleEl = document.getElementById("title");
@@ -933,6 +1017,11 @@
       const copyBtn = document.getElementById("copy-btn");
       const downloadBtn = document.getElementById("download-btn");
       const offlineBanner = document.getElementById("offline-banner");
+      const imagePathEl = document.getElementById("image-path");
+      const imageDatesEl = document.getElementById("image-dates");
+      const imageRawLinkEl = document.getElementById("image-raw-link");
+      const imageDownloadBtn = document.getElementById("image-download-btn");
+      const imagewrap = document.getElementById("imagewrap");
 
       const searchToggleBtn = document.getElementById("search-toggle-btn");
       const searchPanel = document.getElementById("search-panel");
@@ -940,14 +1029,51 @@
       const searchInput = document.getElementById("search-input");
       const searchGoBtn = document.getElementById("search-go-btn");
       const searchCloseBtn = document.getElementById("search-close-btn");
+      const tokenIcon = document.getElementById("token-icon");
+      const tokenInput = document.getElementById("token-input");
+      const tokenSaveBtn = document.getElementById("token-save-btn");
 
       backBtn.innerHTML = icon("back", 18);
       copyBtn.innerHTML = icon("copy", 14) + " Copy";
       downloadBtn.innerHTML = icon("download", 14) + " Save";
       rawLinkEl.innerHTML = icon("external", 12) + " Raw";
+      imageDownloadBtn.innerHTML = icon("download", 14) + " Save";
+      imageRawLinkEl.innerHTML = icon("external", 12) + " Raw";
       searchToggleBtn.innerHTML = icon("search", 16);
       searchPanelIcon.innerHTML = icon("search", 15);
       searchCloseBtn.innerHTML = icon("x", 13);
+      tokenIcon.innerHTML = icon("check", 15);
+
+      // ---- GitHub token (stored locally, used to authenticate API calls) ----
+      const TOKEN_STORAGE_KEY = "gh_token";
+      let githubToken = localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+      if (githubToken) tokenInput.value = githubToken;
+
+      function saveToken() {
+        const val = tokenInput.value.trim();
+        githubToken = val;
+        if (val) {
+          localStorage.setItem(TOKEN_STORAGE_KEY, val);
+          flashButton(tokenSaveBtn, "check", "Saved");
+        } else {
+          localStorage.removeItem(TOKEN_STORAGE_KEY);
+          flashButton(tokenSaveBtn, "check", "Cleared");
+        }
+      }
+      tokenSaveBtn.addEventListener("click", saveToken);
+      tokenInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          saveToken();
+        }
+      });
+
+      function authHeaders(extra = {}) {
+        const headers = { ...extra };
+        if (githubToken) headers.Authorization = `token ${githubToken}`;
+        return headers;
+      }
+      // ---------------------------------------------------------------
 
       let currentCode = "";
       let currentFileName = "";
@@ -991,6 +1117,26 @@
           flashButton(downloadBtn, "check", "Saved");
         } catch (err) {
           flashButton(downloadBtn, "x", "Failed");
+        }
+      });
+
+      let currentImageUrl = "";
+      let currentImageName = "";
+
+      imageDownloadBtn.addEventListener("click", () => {
+        if (!currentImageUrl) return;
+        try {
+          const a = document.createElement("a");
+          a.href = currentImageUrl;
+          a.download = currentImageName || "image.png";
+          a.target = "_blank";
+          a.rel = "noopener";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          flashButton(imageDownloadBtn, "check", "Saved");
+        } catch (err) {
+          flashButton(imageDownloadBtn, "x", "Failed");
         }
       });
 
@@ -1058,7 +1204,7 @@
         let res;
         try {
           res = await fetchWithTimeout(`${API}/contents/${encodeURI(path)}`, {
-            headers: { Accept: "application/vnd.github+json" },
+            headers: authHeaders({ Accept: "application/vnd.github+json" }),
           });
         } catch (err) {
           if (err.name === "AbortError") {
@@ -1090,11 +1236,18 @@
 
       function showList() {
         codeView.style.display = "none";
+        imageView.style.display = "none";
         listView.style.display = "block";
       }
       function showCode() {
         listView.style.display = "none";
+        imageView.style.display = "none";
         codeView.style.display = "flex";
+      }
+      function showImage() {
+        listView.style.display = "none";
+        codeView.style.display = "none";
+        imageView.style.display = "flex";
       }
 
       function updateHeader(path) {
@@ -1237,7 +1390,76 @@
         throw new Error("This file can't be previewed.");
       }
 
+      function isImageFile(name) {
+        const ext = name.includes(".")
+          ? name.split(".").pop().toLowerCase()
+          : "";
+        return IMAGE_EXTENSIONS.has(ext);
+      }
+
+      async function openImage(item) {
+        showImage();
+        backBtn.classList.add("show");
+        crumbEl.textContent =
+          item.path.split("/").slice(0, -1).join(" / ") || OWNER;
+        titleEl.textContent = item.name;
+        imagePathEl.textContent = item.name;
+        currentImageName = item.name;
+        const createdLabel = formatDate(item.created_at);
+        const updatedLabel = formatDate(item.updated_at);
+        imageDatesEl.textContent = [
+          createdLabel ? `Created ${createdLabel}` : null,
+          updatedLabel ? `Modified ${updatedLabel}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        imageRawLinkEl.href =
+          item.html_url ||
+          `https://github.com/${OWNER}/${REPO}/blob/${BRANCH_FALLBACK}/${item.path}`;
+        imagewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}…</div>`;
+        currentImageUrl = "";
+
+        try {
+          const url = item.download_url;
+          if (!url) throw new Error("This image can't be previewed.");
+          currentImageUrl = url;
+
+          const img = document.createElement("img");
+          img.alt = item.name;
+          img.onload = () => {
+            imagewrap.innerHTML = "";
+            imagewrap.appendChild(img);
+          };
+          img.onerror = () => {
+            imagewrap.innerHTML = "";
+            const wrap = document.createElement("div");
+            wrap.style.padding = "8px";
+            wrap.appendChild(
+              errorStatus("Couldn't load this image.", () => openImage(item)),
+            );
+            imagewrap.appendChild(wrap);
+          };
+          img.src = url;
+
+          stack.push({ __file: true });
+        } catch (err) {
+          imagewrap.innerHTML = "";
+          const wrap = document.createElement("div");
+          wrap.style.padding = "8px";
+          wrap.appendChild(
+            errorStatus(err.message || "Couldn't load this image.", () =>
+              openImage(item),
+            ),
+          );
+          imagewrap.appendChild(wrap);
+        }
+      }
+
       async function openFile(item) {
+        if (isImageFile(item.name)) {
+          await openImage(item);
+          return;
+        }
         showCode();
         backBtn.classList.add("show");
         crumbEl.textContent =
@@ -1357,7 +1579,7 @@
           );
           const res = await fetchWithTimeout(
             `https://api.github.com/search/code?q=${q}`,
-            { headers: { Accept: "application/vnd.github+json" } },
+            { headers: authHeaders({ Accept: "application/vnd.github+json" }) },
           );
           if (!res.ok) {
             if (res.status === 403 || res.status === 429) {
@@ -1426,7 +1648,7 @@
           // item.url is the contents-API URL for this exact blob — reuse it
           // to get download_url etc., then hand off to the normal file view.
           const res = await fetchWithTimeout(item.url, {
-            headers: { Accept: "application/vnd.github+json" },
+            headers: authHeaders({ Accept: "application/vnd.github+json" }),
           });
           if (!res.ok)
             throw new Error(`Couldn't load this file (${res.status}).`);
