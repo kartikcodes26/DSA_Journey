@@ -728,11 +728,29 @@
       /* Footer */
       footer {
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         text-align: center;
         padding: 8px 16px calc(12px + env(safe-area-inset-bottom, 0px));
         font-size: 11.5px;
         color: var(--dim-2);
         background: var(--bg);
+      }
+      .vibe-mark {
+        font-family: var(--heading-font);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--dim-2);
+        opacity: 0.45;
+        user-select: none;
+      }
+      .vibe-dot {
+        opacity: 0.28;
+        font-size: 9px;
       }
 
       /* Small screens */
@@ -795,7 +813,7 @@
         <input
           id="token-input"
           type="password"
-          placeholder="GitHub token (optional — enables search)"
+          placeholder="GitHub token (optional — higher rate limit)"
           aria-label="GitHub personal access token"
           autocomplete="off"
         />
@@ -858,7 +876,11 @@
       </div>
     </div>
 
-    <footer>kartikcodes26 / DSA_Journey</footer>
+    <footer>
+      kartikcodes26 / DSA_Journey
+      <span class="vibe-dot" aria-hidden="true">·</span>
+      <span class="vibe-mark">Vibe Coded</span>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
@@ -962,6 +984,36 @@
         "bmp",
         "ico",
       ]);
+
+      const SEARCHABLE_EXT = new Set([
+        "cpp",
+        "cc",
+        "c",
+        "h",
+        "hpp",
+        "py",
+        "java",
+        "js",
+        "jsx",
+        "ts",
+        "tsx",
+        "go",
+        "rs",
+        "rb",
+        "php",
+        "cs",
+        "kt",
+        "swift",
+        "txt",
+        "md",
+      ]);
+
+      function rawFileUrl(path) {
+        return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH_FALLBACK}/${path
+          .split("/")
+          .map(encodeURIComponent)
+          .join("/")}`;
+      }
 
       function langBadgeSvg(label, color, sizePx = 34) {
         const fontSize = label.length > 3 ? 8.5 : label.length === 3 ? 9.5 : 11;
@@ -1370,6 +1422,10 @@
             throw new Error(`Couldn't load this file (${res.status}).`);
           return res.text();
         }
+        if (item.path) {
+          const res = await fetchWithTimeout(rawFileUrl(item.path));
+          if (res.ok) return res.text();
+        }
         if (item.git_url) {
           const res = await fetchWithTimeout(item.git_url, {
             headers: { Accept: "application/vnd.github+json" },
@@ -1522,8 +1578,28 @@
       }
 
       // ---- LeetCode problem-number search ----
-      // Every solution file has a "Problem No : <n>" marker in it, so this
-      // uses GitHub's code search to find files that mention a given number.
+      // Code Search (/search/code) requires auth and is blocked by CORS in
+      // the browser. Instead: one recursive git-tree request, then scan
+      // file heads from raw.githubusercontent.com (CORS-friendly, no token).
+      const INDEX_STORAGE_KEY = "gh_problem_index_v2";
+      const PROBLEM_NO_RES = [
+        /leet\s*code\s*(?:problem\s*)?(?:no\.?|nos\.?|number|#)?\s*:?\s*(\d+)/gi,
+        /problem\s*(?:no\.?|nos\.?|number|#)\s*:?\s*(\d+)/gi,
+        /\bLC\s*#?\s*:?\s*(\d+)/gi,
+      ];
+
+      function extractProblemNumbers(text) {
+        const nums = new Set();
+        const head = text.slice(0, 4000);
+        for (const re of PROBLEM_NO_RES) {
+          re.lastIndex = 0;
+          let m;
+          while ((m = re.exec(head)) !== null) nums.add(m[1]);
+        }
+        return [...nums];
+      }
+      const INDEX_CONCURRENCY = 8;
+      let problemIndex = null; // { sha, files: [{ name, path, problemNos }] }
       let lastSearchQuery = "";
       let lastSearchResults = [];
 
@@ -1565,6 +1641,109 @@
         runSearch(num);
       }
 
+      async function fetchRepoTree() {
+        let res;
+        try {
+          res = await fetchWithTimeout(
+            `${API}/git/trees/${encodeURIComponent(BRANCH_FALLBACK)}?recursive=1`,
+            { headers: authHeaders({ Accept: "application/vnd.github+json" }) },
+          );
+        } catch (err) {
+          if (err.name === "AbortError") {
+            throw new Error("Request timed out — check your connection.");
+          }
+          throw new Error("Couldn't reach GitHub. Check your connection.");
+        }
+        if (!res.ok) {
+          if (res.status === 403 || res.status === 429) {
+            throw new Error("Too many requests right now — try again shortly.");
+          }
+          if (res.status === 404) throw new Error("Couldn't find that.");
+          throw new Error(`Something went wrong (${res.status}).`);
+        }
+        return res.json();
+      }
+
+      async function mapPool(items, limit, fn) {
+        const results = new Array(items.length);
+        let next = 0;
+        async function worker() {
+          while (next < items.length) {
+            const i = next++;
+            results[i] = await fn(items[i]);
+          }
+        }
+        const n = Math.min(limit, items.length);
+        await Promise.all(Array.from({ length: n }, () => worker()));
+        return results;
+      }
+
+      function readCachedIndex() {
+        try {
+          const cached = JSON.parse(
+            localStorage.getItem(INDEX_STORAGE_KEY) || "null",
+          );
+          if (cached && cached.sha && Array.isArray(cached.files)) return cached;
+        } catch (e) {
+          // ignore bad cache
+        }
+        return null;
+      }
+
+      async function ensureProblemIndex(onProgress) {
+        if (problemIndex) return problemIndex;
+
+        const tree = await fetchRepoTree();
+        const cached = readCachedIndex();
+        if (cached && cached.sha === tree.sha) {
+          problemIndex = cached;
+          return problemIndex;
+        }
+
+        const blobs = (tree.tree || []).filter((node) => {
+          if (node.type !== "blob") return false;
+          const name = node.path.split("/").pop();
+          if (HIDDEN_PATTERNS.some((re) => re.test(name))) return false;
+          const ext = name.includes(".")
+            ? name.split(".").pop().toLowerCase()
+            : "";
+          return SEARCHABLE_EXT.has(ext);
+        });
+
+        if (onProgress) onProgress(0, blobs.length);
+
+        let done = 0;
+        const files = [];
+        await mapPool(blobs, INDEX_CONCURRENCY, async (node) => {
+          try {
+            const res = await fetchWithTimeout(rawFileUrl(node.path));
+            if (!res.ok) return;
+            const text = await res.text();
+            const problemNos = extractProblemNumbers(text);
+            if (problemNos.length) {
+              files.push({
+                name: node.path.split("/").pop(),
+                path: node.path,
+                problemNos,
+              });
+            }
+          } catch (e) {
+            // skip files that fail to load
+          } finally {
+            done += 1;
+            if (onProgress) onProgress(done, blobs.length);
+          }
+        });
+
+        problemIndex = { sha: tree.sha, files };
+        try {
+          localStorage.setItem(INDEX_STORAGE_KEY, JSON.stringify(problemIndex));
+        } catch (e) {
+          // quota / private mode
+        }
+        return problemIndex;
+      }
+
       async function runSearch(num) {
         showList();
         stack.push({ __search: true });
@@ -1574,30 +1753,16 @@
         renderSkeleton();
         lastSearchQuery = num;
         try {
-          const q = encodeURIComponent(
-            `"Problem No" ${num} in:file repo:${OWNER}/${REPO}`,
+          const index = await ensureProblemIndex((done, total) => {
+            if (!total) return;
+            titleEl.textContent = `Indexing files… ${done}/${total}`;
+          });
+          lastSearchResults = index.files.filter((item) =>
+            (item.problemNos || []).includes(String(num)),
           );
-          const res = await fetchWithTimeout(
-            `https://api.github.com/search/code?q=${q}`,
-            { headers: authHeaders({ Accept: "application/vnd.github+json" }) },
-          );
-          if (!res.ok) {
-            if (res.status === 403 || res.status === 429) {
-              throw new Error(
-                "GitHub's search is rate-limited right now — try again in a minute.",
-              );
-            }
-            if (res.status === 422) {
-              throw new Error(
-                "That search didn't work — try a different number.",
-              );
-            }
-            throw new Error(`Something went wrong (${res.status}).`);
-          }
-          const data = await res.json();
-          lastSearchResults = data.items || [];
           renderSearchResults(num, lastSearchResults);
         } catch (err) {
+          titleEl.textContent = `LeetCode #${num}`;
           listView.innerHTML = "";
           listView.appendChild(
             errorStatus(err.message || "Couldn't search right now.", () =>
@@ -1638,33 +1803,12 @@
       }
 
       async function openSearchResult(item) {
-        showCode();
-        backBtn.classList.add("show");
-        titleEl.textContent = item.name;
-        crumbEl.textContent =
-          item.path.split("/").slice(0, -1).join(" / ") || OWNER;
-        codewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}…</div>`;
-        try {
-          // item.url is the contents-API URL for this exact blob — reuse it
-          // to get download_url etc., then hand off to the normal file view.
-          const res = await fetchWithTimeout(item.url, {
-            headers: authHeaders({ Accept: "application/vnd.github+json" }),
-          });
-          if (!res.ok)
-            throw new Error(`Couldn't load this file (${res.status}).`);
-          const full = await res.json();
-          await openFile(full);
-        } catch (err) {
-          codewrap.innerHTML = "";
-          const wrap = document.createElement("div");
-          wrap.style.padding = "8px";
-          wrap.appendChild(
-            errorStatus(err.message || "Couldn't load this file.", () =>
-              openSearchResult(item),
-            ),
-          );
-          codewrap.appendChild(wrap);
-        }
+        await openFile({
+          name: item.name,
+          path: item.path,
+          download_url: rawFileUrl(item.path),
+          html_url: `https://github.com/${OWNER}/${REPO}/blob/${BRANCH_FALLBACK}/${item.path}`,
+        });
       }
       // ---- end search ----
 
