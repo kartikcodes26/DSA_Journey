@@ -30,6 +30,6 @@ void printSub(vector<int> &v, int i, int n, vector<int> res = {})
 
 int main()
 {
-    vector<int> v = {3, 1, 2};
+    vector<int> v = {1, 2, 2};
     printSub(v, 0, v.size());
 }
