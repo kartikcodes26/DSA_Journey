@@ -11,7 +11,7 @@
  *     ListNode(int x) : val(x), next(NULL) {}
  * };
  */
- 
+
 class Solution {
 public:
     ListNode* detectCycle(ListNode* head) {
@@ -26,7 +26,8 @@ public:
                 break;
             }
         }
-        if (!iscyclic) {
+        if (!iscyclic)
+        {
             return nullptr;
         }
         slow = head;

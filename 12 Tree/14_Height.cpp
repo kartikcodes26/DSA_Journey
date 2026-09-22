@@ -32,7 +32,7 @@ class Solution {
 		int left = height(root->left); // Left ki height nikalo
 		int right = height(root->right); // Right ki height nikalo
 
-		int ans = 1 + max(left, right); // Root Node + max(left + right)
+		int ans = 1 + max(left, right); // Root Node ki height + max(left + right)
 		return ans;
 
 	}
@@ -71,7 +71,7 @@ public:
         int left = maxDepth(root->left); // Left ki height nikalo
         int right = maxDepth(root->right); // Right ki height nikalo
 
-        int ans = 1 + max(left, right); // Root Node + max(left + right)
+        int ans = 1 + max(left, right); // Root Node ki height + max(left + right)
         return ans;
     }
 };
