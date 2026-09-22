@@ -1,3 +1,10 @@
+// Leetcode 1482. Minimum Number of Days to Make m Bouquets
+// link : https://leetcode.com/problems/minimum-number-of-days-to-make-m-bou
+// TC : O(n log m) where n is the size of the array and m is the maximum bloom day
+// SC : O(1) since we are using constant space for the pointers
+// Difficulty : Medium
+// Pattern : Binary Search
+
 class Solution {
 public:
     int ispossible(vector<int>& bloomDay, int m,int k, int day)
