@@ -19,3 +19,28 @@ Steps to solve question
 3) Find Data in the window
 4) Find Data in new window
 5) Repeat till it reaches the end or produces desired output
+
+int low = 0;
+int res = 0;
+
+for(int high = 0; high < n; high++)
+{
+    // 1. Add s[high] to the window
+    // update frequency / sum / whatever data you need
+
+
+    // 2. While window is INVALID
+    while(/* window is invalid */)
+    {
+        // Remove s[low] from the window
+        // update frequency / sum / whatever data you need
+
+        low++;
+    }
+
+
+    // 3. Window is now VALID
+    res = max(res, high - low + 1);
+}
+
+return res;
