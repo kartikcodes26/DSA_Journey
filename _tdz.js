@@ -9,6 +9,21 @@ const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 const code = blocks[blocks.length - 1][1];
 const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 
+// Guard the encoding: this file must stay clean UTF-8 with no BOM.
+{
+  const buf = fs.readFileSync(path.join(__dirname, "index.html"));
+  if (buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
+    console.log("[FAIL] index.html starts with a UTF-8 BOM");
+    process.exitCode = 1;
+  }
+  if (/[\u00C2\u00E2\u00C3][\s\S]/.test(html)) {
+    console.log("[FAIL] index.html contains mojibake (double-encoded UTF-8)");
+    process.exitCode = 1;
+  } else {
+    console.log("[PASS] encoding clean: no BOM, no mojibake");
+  }
+}
+
 function makeEl(tag, id) {
   const el = {
     tagName: String(tag).toUpperCase(), id: id || "", className: "",
@@ -142,4 +157,56 @@ if (loadError) {
   probe("/user was probed for scopes", () => userCalls.some((u) => u.endsWith("/user")));
   probe("write buttons visible after auto-verify", () =>
     run('tokenInput.value="ghp_x"; saveToken(); [!newFileBtn.classList.contains("hidden"), !editBtn.classList.contains("hidden")].join(",")'));
+
+  // ---- 401 self-heal: a rejected token must not break folder browsing ----
+  (async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    run('githubToken="ghp_bad"; tokenScopes=["repo"]; githubUser={login:"x"};');
+    const store2 = new Map();
+    store2.set("gh_token", "ghp_bad");
+    let attempt = 0;
+    const seen = [];
+    sandbox.fetch = async (url, opts = {}) => {
+      const authed = !!(opts.headers && opts.headers.Authorization);
+      seen.push(authed ? "auth" : "anon");
+      // First authenticated call 401s (the reported failure); the retry is anon.
+      if (authed) {
+        attempt++;
+        return {
+          ok: false, status: 401, headers: { get: () => null },
+          json: async () => ({ message: "Bad credentials" }), text: async () => "",
+        };
+      }
+      return {
+        ok: true, status: 200, headers: { get: () => null },
+        json: async () => [{ type: "dir", name: "07 Stack", path: "07 Stack" }],
+        text: async () => "",
+      };
+    };
+
+    const t = (n, f) => {
+      try { console.log(`[PASS] ${n} => ${JSON.stringify(f())}`); }
+      catch (e) { console.log(`[FAIL] ${n} => ${e.message}`); process.exitCode = 1; }
+    };
+
+    t("ghFetch clears a rejected token and retries anonymously", async () => "pending");
+    let data = null, err = null;
+    try { data = await run('ghFetch("")'); } catch (e) { err = e; }
+    if (err) {
+      console.log(`[FAIL] ghFetch with a bad token still errored => ${err.message}`);
+      process.exitCode = 1;
+    } else {
+      console.log(`[PASS] ghFetch recovered and returned data => ${JSON.stringify(data)}`);
+    }
+    t("token was cleared from memory", () => run('githubToken === ""'));
+    t("cached scopes + identity were cleared", () =>
+      run('JSON.stringify([tokenScopes, githubUser])'));
+    t("only the first attempt was authenticated", () =>
+      JSON.stringify(seen) === '["auth","anon"]');
+    t("write buttons fell back to locked", () =>
+      run('refreshWriteAffordances(); newFileBtn.classList.contains("locked")'));
+    t("token input was cleared for the user to retype", () =>
+      run('tokenInput.value === ""'));
+    await wait(50);
+  })();
 }
