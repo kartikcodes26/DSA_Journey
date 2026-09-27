@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 
 <head>
@@ -1394,7 +1394,7 @@
 
 <body>
   <div id="offline-banner">
-    You're offline — showing what's already loaded
+    You're offline â€” showing what's already loaded
   </div>
   <header>
     <button id="back-btn" aria-label="Back"></button>
@@ -1416,7 +1416,7 @@
     </div>
     <div class="search-panel-inner" style="margin-top: 6px">
       <span class="search-panel-icon" id="token-icon"></span>
-      <input id="token-input" type="password" placeholder="GitHub token (optional — higher rate limit)" aria-label="GitHub personal access token" autocomplete="off" />
+      <input id="token-input" type="password" placeholder="GitHub token (optional â€” higher rate limit)" aria-label="GitHub personal access token" autocomplete="off" />
       <button class="mini-btn" id="token-save-btn">Save</button>
     </div>
   </div>
@@ -1477,7 +1477,7 @@
         <div class="compose-status" id="compose-status"></div>
       </div>
       <div id="editorwrap">
-        <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off" placeholder="File contents…" aria-label="File contents"></textarea>
+        <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off" placeholder="File contentsâ€¦" aria-label="File contents"></textarea>
       </div>
     </div>
   </div>
@@ -1486,7 +1486,7 @@
   
   <footer>
     kartikcodes26 / DSA_Journey
-    <span class="vibe-dot" aria-hidden="true">·</span>
+    <span class="vibe-dot" aria-hidden="true">Â·</span>
     <span class="vibe-mark">Vibe Coded</span>
   </footer>
   
@@ -1595,7 +1595,7 @@
       bmp: { label: "img", color: "#5fc9b8" },
       ico: { label: "img", color: "#5fc9b8" },
     };
-    const DEFAULT_LANG = { label: "•", color: "#86878f" };
+    const DEFAULT_LANG = { label: "â€¢", color: "#86878f" };
     
     // Image file extensions that should open in the image viewer
     const IMAGE_EXTENSIONS = new Set([
@@ -1830,6 +1830,53 @@
     deleteFileBtn.innerHTML = icon("trash", 14) + " Delete";
     cancelEditBtn.innerHTML = icon("x", 13) + " Cancel";
     
+    // ---- Token-derived state ----
+    // Declared BEFORE the token block below, because saving a token refreshes
+    // these synchronously. `let` is in the temporal dead zone until its
+    // declaration is evaluated, so any earlier read throws a ReferenceError.
+    const WRITE_SCOPES = ["repo", "public_repo", "contents", "write:contents"];
+    const SCOPES_STORAGE_KEY = "gh_token_scopes";
+    const PROFILE_STORAGE_KEY = "gh_user";
+    
+    let tokenScopes = readStoredJson(SCOPES_STORAGE_KEY, null); // string[] | null
+    let githubUser = readStoredJson(PROFILE_STORAGE_KEY, null); // {login,name,email}
+    
+    function readStoredJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return parsed == null ? fallback : parsed;
+      } catch (e) {
+        return fallback;
+      }
+    }
+    
+    function writeStoredJson(key, value) {
+      try {
+        if (value == null) localStorage.removeItem(key);
+        else localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        // quota / private mode — writes still work, we just can't cache
+      }
+    }
+    
+    function hasWriteAccess() {
+      if (!githubToken) return false;
+      if (!tokenScopes) return true; // unverified — let the API decide
+      return tokenScopes.some((scope) => WRITE_SCOPES.includes(scope));
+    }
+    
+    function normalizeScopes(raw) {
+      if (!raw) return [];
+      // Classic PATs look like "repo, workflow".
+      return raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    // ===============================================================
+    
     // ---- GitHub token (stored locally, used to authenticate API calls) ----
     const TOKEN_STORAGE_KEY = "gh_token";
     let githubToken = localStorage.getItem(TOKEN_STORAGE_KEY) || "";
@@ -1878,7 +1925,7 @@
           writeStoredJson(SCOPES_STORAGE_KEY, tokenScopes);
         }
       } catch (e) {
-        // Keep the optimistic default — the API is the source of truth.
+        // Keep the optimistic default â€” the API is the source of truth.
       }
       refreshWriteAffordances();
     }
@@ -1904,50 +1951,9 @@
     //   PUT    /contents/{path}  -> create or update (needs blob `sha` to update)
     //   DELETE /contents/{path}  -> delete (needs blob `sha`)
     // Each write is a single commit, so a custom commit message is required.
-    
-    // Only trust a token that actually has owner/repo scope. "repo" covers both
-    // public and private repositories; "public_repo" is enough for public repos.
-    const WRITE_SCOPES = ["repo", "public_repo", "contents", "write:contents"];
-    const SCOPES_STORAGE_KEY = "gh_token_scopes";
-    const PROFILE_STORAGE_KEY = "gh_user";
-    
-    let tokenScopes = readStoredJson(SCOPES_STORAGE_KEY, null); // string[] | null
-    let githubUser = readStoredJson(PROFILE_STORAGE_KEY, null); // {login,name,email}
-    
-    function readStoredJson(key, fallback) {
-      try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return fallback;
-        const parsed = JSON.parse(raw);
-        return parsed == null ? fallback : parsed;
-      } catch (e) {
-        return fallback;
-      }
-    }
-    
-    function writeStoredJson(key, value) {
-      try {
-        if (value == null) localStorage.removeItem(key);
-        else localStorage.setItem(key, JSON.stringify(value));
-      } catch (e) {
-        // quota / private mode — writes still work, we just can't cache
-      }
-    }
-    
-    function hasWriteAccess() {
-      if (!githubToken) return false;
-      if (!tokenScopes) return true; // unverified — let the API decide
-      return tokenScopes.some((scope) => WRITE_SCOPES.includes(scope));
-    }
-    
-    function normalizeScopes(raw) {
-      if (!raw) return [];
-      // Classic PATs look like "repo, workflow".
-      return raw
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
+    // (WRITE_SCOPES / tokenScopes / githubUser and their storage helpers are
+    //  declared above the token block — see "Token-derived state".)
+    // ===============================================================
     
     function composeStatus(message, kind) {
       composeStatusEl.className = "compose-status" + (kind ? ` ${kind}` : "");
@@ -1966,7 +1972,7 @@
       cancelEditBtn.disabled = busy;
       fileNameInput.disabled = busy;
       if (busy) {
-        saveFileBtn.innerHTML = `${icon("loader", 14)} ${escapeHtml(label || "Working…")}`;
+        saveFileBtn.innerHTML = `${icon("loader", 14)} ${escapeHtml(label || "Workingâ€¦")}`;
       } else {
         saveFileBtn.innerHTML = icon("git", 14) + " Commit";
         updateDeleteButtonLabel();
@@ -2046,7 +2052,7 @@
           writeStoredJson(PROFILE_STORAGE_KEY, githubUser);
         }
       } catch (e) {
-        // Offline — fall back to the default identity below.
+        // Offline â€” fall back to the default identity below.
       }
       return githubUser;
     }
@@ -2109,7 +2115,7 @@
         res = await fetchWithTimeout(`${API_BASE}${endpoint}`, opts);
       } catch (err) {
         if (err.name === "AbortError") {
-          throw new Error("Request timed out — check your connection.");
+          throw new Error("Request timed out â€” check your connection.");
         }
         throw new Error("Couldn't reach GitHub. Check your connection.");
       }
@@ -2143,12 +2149,12 @@
             Math.ceil((reset * 1000 - Date.now()) / 60000),
           );
           return new Error(
-            `Rate limited by GitHub — try again in about ${mins} minute${mins === 1 ? "" : "s"}.`,
+            `Rate limited by GitHub â€” try again in about ${mins} minute${mins === 1 ? "" : "s"}.`,
           );
         }
         if (/scope|permission|not accessible|forbidden for/i.test(apiMessage)) {
           return new Error(
-            "This token can't write to this repo — it needs the \"repo\" (or \"public_repo\") scope.",
+            "This token can't write to this repo â€” it needs the \"repo\" (or \"public_repo\") scope.",
           );
         }
         return new Error(
@@ -2158,7 +2164,7 @@
       }
       if (res.status === 404) {
         return new Error(
-          "Not found — the file, branch or repo may have moved, or the token can't see it.",
+          "Not found â€” the file, branch or repo may have moved, or the token can't see it.",
         );
       }
       if (res.status === 409) {
@@ -2197,7 +2203,7 @@
       const allowed = hasWriteAccess();
       const hint = allowed ?
         "" :
-        " — needs a GitHub token with the repo scope";
+        " â€” needs a GitHub token with the repo scope";
       newFileBtn.classList.toggle("locked", !allowed);
       newFileBtn.title = `Create a new file${hint}`;
       newFileBtn.setAttribute("aria-label", `Create a new file${hint}`);
@@ -2339,7 +2345,7 @@
         });
       } catch (err) {
         if (err.name === "AbortError") {
-          throw new Error("Request timed out — check your connection.");
+          throw new Error("Request timed out â€” check your connection.");
         }
         throw new Error("Couldn't reach GitHub. Check your connection.");
       }
@@ -2354,10 +2360,10 @@
             );
             const mins = Math.ceil(waitSec / 60);
             throw new Error(
-              `Rate limited by GitHub — try again in about ${mins} minute${mins === 1 ? "" : "s"}.`,
+              `Rate limited by GitHub â€” try again in about ${mins} minute${mins === 1 ? "" : "s"}.`,
             );
           }
-          throw new Error("Too many requests right now — try again shortly.");
+          throw new Error("Too many requests right now â€” try again shortly.");
         }
         if (res.status === 404) throw new Error("Couldn't find that.");
         throw new Error(`Something went wrong (${res.status}).`);
@@ -2503,7 +2509,7 @@
       tokenInput.focus();
     }
     
-    // PUT /contents/{path} — creates the file, or updates it when `sha` is set.
+    // PUT /contents/{path} â€” creates the file, or updates it when `sha` is set.
     async function commitFile({ path, content, sha, message, description }) {
       const identity = await ensureCommitIdentity();
       const body = {
@@ -2590,8 +2596,8 @@
         return;
       }
       
-      setComposeBusy(true, "Committing…");
-      composeStatus("Reading the latest version from GitHub…");
+      setComposeBusy(true, "Committingâ€¦");
+      composeStatus("Reading the latest version from GitHubâ€¦");
       
       try {
         // Re-read the live blob so two edits in a row can never conflict.
@@ -2600,14 +2606,14 @@
         if (composeState.mode === "create" && live) {
           setComposeBusy(false);
           composeStatus(
-            `${path} already exists — edit it instead.`,
+            `${path} already exists â€” edit it instead.`,
             "error",
           );
           return;
         }
         if (composeState.mode === "update" && !live) {
           setComposeBusy(false);
-          composeStatus(`${path} no longer exists on GitHub — nothing to update.`, "error");
+          composeStatus(`${path} no longer exists on GitHub â€” nothing to update.`, "error");
           return;
         }
         
@@ -2618,7 +2624,7 @@
           return;
         }
         
-        composeStatus(`Committing to ${BRANCH_WRITE}…`);
+        composeStatus(`Committing to ${BRANCH_WRITE}â€¦`);
         const res = await commitFile({
           path,
           content,
@@ -2630,7 +2636,7 @@
         const verb = live ? "Updated" : "Created";
         invalidateRepoCaches();
         setComposeBusy(false);
-        composeStatus(`${verb} ${path} — ${shortSha(res.commit.sha)}`, "ok");
+        composeStatus(`${verb} ${path} â€” ${shortSha(res.commit.sha)}`, "ok");
         stack.pop();
         await renderFolder(parentPath(path));
         flashBanner(`${verb} ${path}`, res.commit.html_url);
@@ -2768,7 +2774,7 @@
         confirmBtn.disabled = true;
         cancelBtn.disabled = true;
         const original = confirmBtn.innerHTML;
-        confirmBtn.innerHTML = `${icon("loader", 14)} <span>Working…</span>`;
+        confirmBtn.innerHTML = `${icon("loader", 14)} <span>Workingâ€¦</span>`;
         try {
           await onConfirm();
         } finally {
@@ -2873,7 +2879,7 @@
           <div class="badge folder">${icon("folder", 18)}</div>
           <div class="row-info">
             <div class="row-name">${escapeHtml(item.name)}</div>
-            <div class="row-sub">Folder${dateBits.length ? `<span class="dot">·</span>${dateBits.join(" · ")}` : ""}</div>
+            <div class="row-sub">Folder${dateBits.length ? `<span class="dot">Â·</span>${dateBits.join(" Â· ")}` : ""}</div>
           </div>
           <div class="row-chev">${icon("chevron", 15)}</div>`;
             row.addEventListener("click", () => {
@@ -2886,7 +2892,7 @@
           <div class="badge">${fileIconHtml(item.name)}</div>
           <div class="row-info">
             <div class="row-name">${escapeHtml(item.name)}</div>
-            <div class="row-sub">${sizeLabel}${dateBits.length ? `<span class="dot">·</span>${dateBits.join(" · ")}` : ""}</div>
+            <div class="row-sub">${sizeLabel}${dateBits.length ? `<span class="dot">Â·</span>${dateBits.join(" Â· ")}` : ""}</div>
           </div>
           <div class="row-chev">${icon("chevron", 15)}</div>`;
             row.addEventListener("click", () => openFile(item));
@@ -2921,7 +2927,7 @@
       editTool.className = "row-tool" + locked;
       editTool.title = hasWriteAccess() ?
         `Edit ${item.name}` :
-        `Edit ${item.name} — needs a GitHub token with the repo scope`;
+        `Edit ${item.name} â€” needs a GitHub token with the repo scope`;
       editTool.setAttribute("aria-label", `Edit ${item.name}`);
       editTool.innerHTML = icon("edit", 14);
       editTool.addEventListener("click", (e) => {
@@ -2933,7 +2939,7 @@
       delTool.className = "row-tool del" + locked;
       delTool.title = hasWriteAccess() ?
         `Delete ${item.name}` :
-        `Delete ${item.name} — needs a GitHub token with the repo scope`;
+        `Delete ${item.name} â€” needs a GitHub token with the repo scope`;
       delTool.setAttribute("aria-label", `Delete ${item.name}`);
       delTool.innerHTML = icon("trash", 14);
       delTool.addEventListener("click", (e) => {
@@ -2962,7 +2968,7 @@
       newBtn.innerHTML = `${icon("plus", 13)} New file`;
       newBtn.title = allowed ?
         `Create a file in ${path || REPO}` :
-        `Create a file in ${path || REPO} — needs a GitHub token with the repo scope`;
+        `Create a file in ${path || REPO} â€” needs a GitHub token with the repo scope`;
       newBtn.addEventListener("click", () => startNewFile(path));
       listActionsBar.appendChild(newBtn);
       
@@ -2999,7 +3005,7 @@
       });
       // openComposer bails out (and prompts for a token) without write access.
       if (!composeState) return;
-      composeStatus("Loading the latest version from GitHub…");
+      composeStatus("Loading the latest version from GitHubâ€¦");
       fetchRemoteFile(target)
         .then((live) => {
           // The user may have navigated away or switched files by now.
@@ -3078,11 +3084,11 @@
           updatedLabel ? `Modified ${updatedLabel}` : null,
         ]
         .filter(Boolean)
-        .join(" · ");
+        .join(" Â· ");
       imageRawLinkEl.href =
         item.html_url ||
         `https://github.com/${OWNER}/${REPO}/blob/${BRANCH_FALLBACK}/${item.path}`;
-      imagewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}…</div>`;
+      imagewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}â€¦</div>`;
       currentImageUrl = "";
       
       try {
@@ -3141,11 +3147,11 @@
           updatedLabel ? `Modified ${updatedLabel}` : null,
         ]
         .filter(Boolean)
-        .join(" · ");
+        .join(" Â· ");
       rawLinkEl.href =
         item.html_url ||
         `https://github.com/${OWNER}/${REPO}/blob/${BRANCH_FALLBACK}/${item.path}`;
-      codewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}…</div>`;
+      codewrap.innerHTML = `<div class="status">Loading ${escapeHtml(item.name)}â€¦</div>`;
       currentCode = "";
       
       try {
@@ -3263,13 +3269,13 @@
         );
       } catch (err) {
         if (err.name === "AbortError") {
-          throw new Error("Request timed out — check your connection.");
+          throw new Error("Request timed out â€” check your connection.");
         }
         throw new Error("Couldn't reach GitHub. Check your connection.");
       }
       if (!res.ok) {
         if (res.status === 403 || res.status === 429) {
-          throw new Error("Too many requests right now — try again shortly.");
+          throw new Error("Too many requests right now â€” try again shortly.");
         }
         if (res.status === 404) throw new Error("Couldn't find that.");
         throw new Error(`Something went wrong (${res.status}).`);
@@ -3368,7 +3374,7 @@
       try {
         const index = await ensureProblemIndex((done, total) => {
           if (!total) return;
-          titleEl.textContent = `Indexing files… ${done}/${total}`;
+          titleEl.textContent = `Indexing filesâ€¦ ${done}/${total}`;
         });
         lastSearchResults = index.files.filter((item) =>
           (item.problemNos || []).includes(String(num)),
@@ -3409,7 +3415,7 @@
           <div class="badge">${fileIconHtml(item.name)}</div>
           <div class="row-info">
             <div class="row-name">${escapeHtml(item.name)}</div>
-            <div class="row-sub">${dirPath ? escapeHtml(dirPath) : OWNER}<span class="dot">·</span><span class="result-tag">${icon("search", 11)} #${escapeHtml(num)}</span></div>
+            <div class="row-sub">${dirPath ? escapeHtml(dirPath) : OWNER}<span class="dot">Â·</span><span class="result-tag">${icon("search", 11)} #${escapeHtml(num)}</span></div>
           </div>
           <div class="row-chev">${icon("chevron", 15)}</div>`;
         row.addEventListener("click", () => openSearchResult(item));
@@ -3471,7 +3477,7 @@
         danger: true,
         body: [
           modalText(
-            "You have unsaved edits. Leaving now loses them — nothing has been committed.",
+            "You have unsaved edits. Leaving now loses them â€” nothing has been committed.",
           ),
         ],
         confirmLabel: "Discard",
@@ -3601,3 +3607,4 @@
 </body>
 
 </html>
+
