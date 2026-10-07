@@ -18,7 +18,6 @@ class Solution {
 
             adjL[src].push_back({dest, weight});
             adjL[dest].push_back({src, weight});
-
         }
 
         vector<int> res(V, INT_MAX);
