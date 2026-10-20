@@ -10,7 +10,7 @@ public:
         bool operator() (pair<int, int> p1, pair<int, int> p2) {
             int d1 = (p1.first * p1.first + p1.second * p1.second);
             int d2 = (p2.first * p2.first + p2.second * p2.second);
-            return d1 < d2; // min heap based on distance frm origin as we want closest point
+            return d1 < d2; // max heap based on distance frm origin as we want closest point
         }
     };
 
